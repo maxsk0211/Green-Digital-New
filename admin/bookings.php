@@ -87,12 +87,14 @@ while ($row = mysqli_fetch_assoc($status_result)) {
 ?>
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>จัดการการจอง - Green Digital Admin</title>
     <link rel="stylesheet" href="../css/bootstrap.min.css">
 </head>
+
 <body>
     <?php include 'navbar.php'; ?>
 
@@ -127,7 +129,8 @@ while ($row = mysqli_fetch_assoc($status_result)) {
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <a href="?status=" class="text-decoration-none">
-                    <div class="card text-center <?php echo !isset($_GET['status']) || $_GET['status'] == '' ? 'bg-primary text-white' : ''; ?>">
+                    <div
+                        class="card text-center <?php echo !isset($_GET['status']) || $_GET['status'] == '' ? 'bg-primary text-white' : ''; ?>">
                         <div class="card-body">
                             <h3 class="mb-0"><?php echo number_format(array_sum($status_counts)); ?></h3>
                             <p class="mb-0">ทั้งหมด</p>
@@ -137,7 +140,8 @@ while ($row = mysqli_fetch_assoc($status_result)) {
             </div>
             <div class="col-md-3">
                 <a href="?status=pending" class="text-decoration-none">
-                    <div class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'pending' ? 'bg-warning text-dark' : ''; ?>">
+                    <div
+                        class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'pending' ? 'bg-warning text-dark' : ''; ?>">
                         <div class="card-body">
                             <h3 class="mb-0"><?php echo number_format($status_counts['pending'] ?? 0); ?></h3>
                             <p class="mb-0">รอดำเนินการ</p>
@@ -147,7 +151,8 @@ while ($row = mysqli_fetch_assoc($status_result)) {
             </div>
             <div class="col-md-3">
                 <a href="?status=confirmed" class="text-decoration-none">
-                    <div class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'confirmed' ? 'bg-info text-white' : ''; ?>">
+                    <div
+                        class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'confirmed' ? 'bg-info text-white' : ''; ?>">
                         <div class="card-body">
                             <h3 class="mb-0"><?php echo number_format($status_counts['confirmed'] ?? 0); ?></h3>
                             <p class="mb-0">ยืนยันแล้ว</p>
@@ -157,7 +162,8 @@ while ($row = mysqli_fetch_assoc($status_result)) {
             </div>
             <div class="col-md-3">
                 <a href="?status=completed" class="text-decoration-none">
-                    <div class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'completed' ? 'bg-success text-white' : ''; ?>">
+                    <div
+                        class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'completed' ? 'bg-success text-white' : ''; ?>">
                         <div class="card-body">
                             <h3 class="mb-0"><?php echo number_format($status_counts['completed'] ?? 0); ?></h3>
                             <p class="mb-0">เสร็จสิ้น</p>
@@ -183,15 +189,18 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">จากวันที่</label>
-                        <input type="date" name="date_from" class="form-control" value="<?php echo isset($_GET['date_from']) ? $_GET['date_from'] : ''; ?>">
+                        <input type="date" name="date_from" class="form-control"
+                            value="<?php echo isset($_GET['date_from']) ? $_GET['date_from'] : ''; ?>">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">ถึงวันที่</label>
-                        <input type="date" name="date_to" class="form-control" value="<?php echo isset($_GET['date_to']) ? $_GET['date_to'] : ''; ?>">
+                        <input type="date" name="date_to" class="form-control"
+                            value="<?php echo isset($_GET['date_to']) ? $_GET['date_to'] : ''; ?>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">ค้นหา</label>
-                        <input type="text" name="search" class="form-control" placeholder="ชื่อ, เบอร์โทร..." value="<?php echo isset($_GET['search']) ? $_GET['search'] : ''; ?>">
+                        <input type="text" name="search" class="form-control" placeholder="ชื่อ, เบอร์โทร..."
+                            value="<?php echo isset($_GET['search']) ? $_GET['search'] : ''; ?>">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">&nbsp;</label>
@@ -202,82 +211,125 @@ while ($row = mysqli_fetch_assoc($status_result)) {
         </div>
 
         <!-- Bookings List -->
-        <div class="row">
-            <?php if ($bookings && mysqli_num_rows($bookings) > 0): ?>
-                <?php while ($booking = mysqli_fetch_assoc($bookings)): ?>
-                <div class="col-lg-6 col-xl-4">
-                    <div class="booking-card">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h5 class="mb-1">
-                                    <a href="booking_detail.php?id=<?php echo $booking['booking_id']; ?>" class="text-decoration-none">
-                                        #<?php echo str_pad($booking['booking_id'], 6, '0', STR_PAD_LEFT); ?>
-                                    </a>
-                                </h5>
-                                <small class="text-muted">
-                                    📅 <?php echo date('d/m/Y', strtotime($booking['booking_date'])); ?>
-                                    ⏰ <?php echo date('H:i', strtotime($booking['booking_time'])); ?> น.
-                                </small>
-                            </div>
-                            <div>
-                                <?php if ($booking['status'] == 'pending'): ?>
-                                    <span class="badge bg-warning status-badge">รอดำเนินการ</span>
-                                <?php elseif ($booking['status'] == 'confirmed'): ?>
-                                    <span class="badge bg-info status-badge">ยืนยันแล้ว</span>
-                                <?php elseif ($booking['status'] == 'completed'): ?>
-                                    <span class="badge bg-success status-badge">เสร็จสิ้น</span>
-                                <?php else: ?>
-                                    <span class="badge bg-danger status-badge">ยกเลิก</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">📋 รายการการจอง (<?php echo $bookings ? mysqli_num_rows($bookings) : 0; ?> รายการ)</h4>
+        </div>
 
-                        <div class="mb-2">
-                            <strong>👤 ลูกค้า:</strong> <?php echo htmlspecialchars($booking['first_name'] . ' ' . $booking['last_name']); ?><br>
-                            <small class="text-muted">📞 <?php echo htmlspecialchars($booking['phone']); ?></small>
-                        </div>
-
-                        <div class="mb-2">
-                            <strong>📍 ที่อยู่:</strong><br>
-                            <small><?php echo nl2br(htmlspecialchars(substr($booking['pickup_address'], 0, 100))); ?><?php echo strlen($booking['pickup_address']) > 100 ? '...' : ''; ?></small>
-                        </div>
-
-                        <?php if ($booking['items_count']): ?>
-                            <div class="mb-2">
-                                <strong>♻️ รายการ:</strong> <?php echo $booking['items_count']; ?> รายการ
-                                <?php if ($booking['total_weight']): ?>
-                                    | <strong>⚖️</strong> <?php echo number_format($booking['total_weight'], 2); ?> kg
-                                <?php endif; ?>
-                            </div>
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="8%">เลขที่จอง</th>
+                            <th width="12%">วันที่-เวลา</th>
+                            <th width="13%">ลูกค้า</th>
+                            <th width="10%">เบอร์โทร</th>
+                            <th width="15%">ที่อยู่</th>
+                            <th width="10%">รายการ/น้ำหนัก</th>
+                            <th width="10%">ราคาประมาณ</th>
+                            <th width="8%">สถานะ</th>
+                            <th width="9%" class="text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ($bookings && mysqli_num_rows($bookings) > 0): ?>
+                            <?php
+                            $no = 1;
+                            while ($booking = mysqli_fetch_assoc($bookings)):
+                                ?>
+                                <tr>
+                                    <td><?php echo $no++; ?></td>
+                                    <td>
+                                        <strong>
+                                            <a href="booking_detail.php?id=<?php echo $booking['booking_id']; ?>"
+                                                class="text-decoration-none">
+                                                #<?php echo str_pad($booking['booking_id'], 6, '0', STR_PAD_LEFT); ?>
+                                            </a>
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            📅 <?php echo date('d/m/Y', strtotime($booking['booking_date'])); ?><br>
+                                            ⏰ <?php echo date('H:i', strtotime($booking['booking_time'])); ?> น.
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <strong><?php echo htmlspecialchars($booking['first_name'] . ' ' . $booking['last_name']); ?></strong>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($booking['phone']); ?></td>
+                                    <td>
+                                        <small class="text-muted">
+                                            <?php echo htmlspecialchars(substr($booking['pickup_address'], 0, 50)); ?>
+                                            <?php echo strlen($booking['pickup_address']) > 50 ? '...' : ''; ?>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <?php if ($booking['items_count']): ?>
+                                            <small>
+                                                <?php echo $booking['items_count']; ?> รายการ
+                                                <?php if ($booking['total_weight']): ?>
+                                                    <br><?php echo number_format($booking['total_weight'], 2); ?> kg
+                                                <?php endif; ?>
+                                            </small>
+                                        <?php else: ?>
+                                            <small class="text-muted">-</small>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($booking['estimated_price']): ?>
+                                            <strong
+                                                class="text-success"><?php echo number_format($booking['estimated_price'], 2); ?>
+                                                ฿</strong>
+                                        <?php else: ?>
+                                            <small class="text-muted">-</small>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($booking['status'] == 'pending'): ?>
+                                            <span class="badge bg-warning">รอดำเนินการ</span>
+                                        <?php elseif ($booking['status'] == 'confirmed'): ?>
+                                            <span class="badge bg-info">ยืนยันแล้ว</span>
+                                        <?php elseif ($booking['status'] == 'completed'): ?>
+                                            <span class="badge bg-success">เสร็จสิ้น</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-danger">ยกเลิก</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="booking_detail.php?id=<?php echo $booking['booking_id']; ?>"
+                                            class="btn btn-info btn-sm" title="รายละเอียด">👁️</a>
+                                        <?php if ($booking['status'] == 'pending'): ?>
+                                            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                                                data-bs-target="#confirmModal<?php echo $booking['booking_id']; ?>"
+                                                title="ยืนยันการจอง">✅</button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="10" class="text-center">
+                                    <div class="alert alert-info mb-0">
+                                        <h5>ไม่พบข้อมูลการจอง</h5>
+                                        <p class="mb-0">ยังไม่มีการจองในระบบ หรือลองเปลี่ยนเงื่อนไขการค้นหา</p>
+                                    </div>
+                                </td>
+                            </tr>
                         <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                        <?php if ($booking['estimated_price']): ?>
-                            <div class="mb-3">
-                                <strong>💰 ราคาประมาณ:</strong>
-                                <span class="text-success fs-5"><?php echo number_format($booking['estimated_price'], 2); ?> ฿</span>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ($booking['assigned_name']): ?>
-                            <div class="mb-2">
-                                <small class="text-muted">👨‍💼 ผู้รับผิดชอบ: <?php echo htmlspecialchars($booking['assigned_name']); ?></small>
-                            </div>
-                        <?php endif; ?>
-
-                        <div class="d-flex gap-2 mt-3">
-                            <a href="booking_detail.php?id=<?php echo $booking['booking_id']; ?>" class="btn btn-sm btn-primary flex-grow-1">
-                                👁️ รายละเอียด
-                            </a>
-                            <?php if ($booking['status'] == 'pending'): ?>
-                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#confirmModal<?php echo $booking['booking_id']; ?>">
-                                    ✅ ยืนยัน
-                                </button>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <!-- Quick Confirm Modal -->
-                    <?php if ($booking['status'] == 'pending'): ?>
+        <!-- Modal สำหรับยืนยันการจอง (แยกออกจาก Loop) -->
+        <?php
+        // Reset pointer เพื่อ loop สร้าง modal
+        if ($bookings && mysqli_num_rows($bookings) > 0) {
+            mysqli_data_seek($bookings, 0);
+            while ($booking = mysqli_fetch_assoc($bookings)):
+                if ($booking['status'] == 'pending'):
+                    ?>
                     <div class="modal fade" id="confirmModal<?php echo $booking['booking_id']; ?>" tabindex="-1">
                         <div class="modal-dialog">
                             <div class="modal-content">
@@ -287,8 +339,11 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                                 </div>
                                 <div class="modal-body">
                                     <p>ยืนยันการจอง #<?php echo str_pad($booking['booking_id'], 6, '0', STR_PAD_LEFT); ?></p>
-                                    <p><strong>ลูกค้า:</strong> <?php echo htmlspecialchars($booking['first_name'] . ' ' . $booking['last_name']); ?></p>
-                                    <p><strong>วันที่:</strong> <?php echo date('d/m/Y H:i', strtotime($booking['booking_date'] . ' ' . $booking['booking_time'])); ?> น.</p>
+                                    <p><strong>ลูกค้า:</strong>
+                                        <?php echo htmlspecialchars($booking['first_name'] . ' ' . $booking['last_name']); ?></p>
+                                    <p><strong>วันที่:</strong>
+                                        <?php echo date('d/m/Y H:i', strtotime($booking['booking_date'] . ' ' . $booking['booking_time'])); ?>
+                                        น.</p>
                                 </div>
                                 <div class="modal-footer">
                                     <form method="POST" action="sql/booking_update_status.php" class="w-100">
@@ -303,20 +358,14 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                             </div>
                         </div>
                     </div>
-                    <?php endif; ?>
-                </div>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <div class="col-12">
-                    <div class="alert alert-info text-center">
-                        <h5>ไม่พบข้อมูลการจอง</h5>
-                        <p class="mb-0">ยังไม่มีการจองในระบบ หรือลองเปลี่ยนเงื่อนไขการค้นหา</p>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
+                <?php
+                endif;
+            endwhile;
+        }
+        ?>
     </div>
 
     <script src="../js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
