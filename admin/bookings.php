@@ -166,7 +166,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                         class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'completed' ? 'bg-success text-white' : ''; ?>">
                         <div class="card-body">
                             <h3 class="mb-0"><?php echo number_format($status_counts['completed'] ?? 0); ?></h3>
-                            <p class="mb-0">เสร็จสิ้น</p>
+                            <p class="mb-0">เสร็จสิ้น </p>
                         </div>
                     </div>
                 </a>
@@ -358,7 +358,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                             </div>
                         </div>
                     </div>
-                <?php
+                    <?php
                 endif;
             endwhile;
         }
