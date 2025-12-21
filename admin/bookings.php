@@ -93,7 +93,6 @@ while ($row = mysqli_fetch_assoc($status_result)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>จัดการการจอง - Green Digital Admin</title>
     <link rel="stylesheet" href="../css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 
 <body>
@@ -254,7 +253,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                                         <!-- ปุ่มดู -->
                                         <a href="booking_detail.php?id=<?php echo $booking['booking_id']; ?>"
                                             class="btn btn-info btn-sm" title="ดูรายละเอียด">
-                                            <i class="bi bi-eye"></i> ดู
+                                            👁️ ดู
                                         </a>
 
                                         <!-- ปุ่มยืนยัน: แสดงเฉพาะสถานะ pending -->
@@ -262,7 +261,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                                             <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
                                                 data-bs-target="#confirmModal<?php echo $booking['booking_id']; ?>"
                                                 title="ยืนยันการจอง">
-                                                <i class="bi bi-check-circle"></i> ยืนยัน
+                                                ✅ ยืนยัน
                                             </button>
                                         <?php endif; ?>
 
@@ -270,7 +269,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                                         <?php if ($booking['status'] == 'cancelled'): ?>
                                             <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
                                                 data-bs-target="#deleteModal<?php echo $booking['booking_id']; ?>" title="ลบ">
-                                                <i class="bi bi-trash"></i> ลบ
+                                                🗑️ ลบ
                                             </button>
                                         <?php endif; ?>
                                     </td>
@@ -303,7 +302,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header bg-success text-white">
-                                    <h5 class="modal-title"><i class="bi bi-check-circle"></i> ยืนยันการจอง</h5>
+                                    <h5 class="modal-title">✅ ยืนยันการจอง</h5>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
@@ -321,7 +320,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                                         <div class="d-flex gap-2 justify-content-end">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
                                             <button type="submit" class="btn btn-success">
-                                                <i class="bi bi-check-circle"></i> ยืนยันการจอง
+                                                ✅ ยืนยันการจอง
                                             </button>
                                         </div>
                                     </form>
@@ -347,13 +346,12 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header bg-danger text-white">
-                                    <h5 class="modal-title"><i class="bi bi-trash"></i> ลบการจอง</h5>
+                                    <h5 class="modal-title">🗑️ ลบการจอง</h5>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
                                     <div class="alert alert-warning">
-                                        <i class="bi bi-exclamation-triangle"></i>
-                                        <strong>คำเตือน:</strong> การลบจะไม่สามารถกู้คืนได้!
+                                        ⚠️ <strong>คำเตือน:</strong> การลบจะไม่สามารถกู้คืนได้!
                                     </div>
                                     <p>คุณต้องการลบการจอง #<?php echo str_pad($booking['booking_id'], 6, '0', STR_PAD_LEFT); ?>
                                         ใช่หรือไม่?</p>
@@ -369,7 +367,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                                         <div class="d-flex gap-2 justify-content-end">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
                                             <button type="submit" class="btn btn-danger">
-                                                <i class="bi bi-trash"></i> ลบการจอง
+                                                🗑️ ลบการจอง
                                             </button>
                                         </div>
                                     </form>

@@ -65,6 +65,32 @@ $stats = mysqli_fetch_assoc($stats_result);
 // ดึงรายการบทความสำหรับ dropdown
 $articles_sql = "SELECT article_id, title FROM articles ORDER BY title";
 $articles_list = mysqli_query($conn, $articles_sql);
+
+// เก็บ comments ใน array
+$comments_data = [];
+while ($row = mysqli_fetch_assoc($comments)) {
+    $comments_data[] = $row;
+}
+
+// เก็บ articles ใน array
+$articles_data = [];
+while ($row = mysqli_fetch_assoc($articles_list)) {
+    $articles_data[] = $row;
+}
+
+// Config สถานะ
+$status_config = [
+    'active' => ['class' => 'bg-success', 'text' => 'แสดง'],
+    'deleted' => ['class' => 'bg-secondary', 'text' => 'ลบแล้ว'],
+    'hidden' => ['class' => 'bg-warning', 'text' => 'ซ่อน']
+];
+
+// Config ฟิลเตอร์
+$filter_options = [
+    'active' => 'กำลังแสดง',
+    'deleted' => 'ถูกลบ',
+    'hidden' => 'ซ่อน'
+];
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -78,11 +104,12 @@ $articles_list = mysqli_query($conn, $articles_sql);
     <?php include 'navbar.php'; ?>
 
     <div class="container mt-4 mb-5">
-        <h3 class="mb-4">💬 จัดการความคิดเห็นบทความ</h3>
+        <h3 class="mb-4">จัดการความคิดเห็นบทความ</h3>
 
         <!-- ฟิลเตอร์ -->
-        <div class="filter-section">
-            <h5 class="mb-3">🔍 ค้นหา/ฟิลเตอร์</h5>
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="mb-3">ค้นหา/ฟิลเตอร์</h5>
             <form method="GET" action="">
                 <div class="row">
                     <div class="col-md-3">
@@ -93,36 +120,39 @@ $articles_list = mysqli_query($conn, $articles_sql);
                         <label class="form-label">สถานะ</label>
                         <select name="status" class="form-select">
                             <option value="">ทั้งหมด</option>
-                            <option value="active" <?= $filter_status == 'active' ? 'selected' : '' ?>>กำลังแสดง</option>
-                            <option value="deleted" <?= $filter_status == 'deleted' ? 'selected' : '' ?>>ถูกลบ</option>
-                            <option value="hidden" <?= $filter_status == 'hidden' ? 'selected' : '' ?>>ซ่อน</option>
+                            <?php foreach ($filter_options as $key => $label): ?>
+                                <option value="<?= $key ?>" <?= $filter_status == $key ? 'selected' : '' ?>>
+                                    <?= $label ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">บทความ</label>
                         <select name="article_id" class="form-select">
                             <option value="0">ทั้งหมด</option>
-                            <?php while($art = mysqli_fetch_assoc($articles_list)): ?>
+                            <?php foreach ($articles_data as $art): ?>
                                 <option value="<?= $art['article_id'] ?>" <?= $filter_article == $art['article_id'] ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($art['title']) ?>
                                 </option>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">&nbsp;</label>
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary flex-grow-1">🔍 ค้นหา</button>
+                            <button type="submit" class="btn btn-primary flex-grow-1">ค้นหา</button>
                             <a href="article_comments.php" class="btn btn-secondary">ล้าง</a>
                         </div>
                     </div>
                 </div>
             </form>
+            </div>
         </div>
 
         <?php if(isset($_GET['success'])): ?>
             <div class="alert alert-success alert-dismissible fade show">
-                ✅ ดำเนินการเรียบร้อยแล้ว
+                ดำเนินการเรียบร้อยแล้ว
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
@@ -144,8 +174,8 @@ $articles_list = mysqli_query($conn, $articles_sql);
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if(mysqli_num_rows($comments) > 0): ?>
-                                <?php while($comment = mysqli_fetch_assoc($comments)): ?>
+                            <?php if(count($comments_data) > 0): ?>
+                                <?php foreach($comments_data as $comment): ?>
                                     <tr>
                                         <td><?= $comment['comment_id'] ?></td>
                                         <td>
@@ -161,20 +191,14 @@ $articles_list = mysqli_query($conn, $articles_sql);
                                                 <?= htmlspecialchars($comment['article_title']) ?>
                                             </a>
                                         </td>
-                                        <td>
-                                            <div class="comment-preview" title="<?= htmlspecialchars($comment['comment_text']) ?>">
-                                                <?= htmlspecialchars($comment['comment_text']) ?>
-                                            </div>
-                                        </td>
+                                        <td><?= htmlspecialchars($comment['comment_text']) ?></td>
                                         <td><?= date('d/m/Y H:i', strtotime($comment['created_at'])) ?></td>
                                         <td>
-                                            <?php if($comment['status'] == 'active'): ?>
-                                                <span class="badge bg-success">แสดง</span>
-                                            <?php elseif($comment['status'] == 'deleted'): ?>
-                                                <span class="badge bg-secondary">ลบแล้ว</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-warning">ซ่อน</span>
-                                            <?php endif; ?>
+                                            <?php
+                                            $status = $comment['status'];
+                                            $config = $status_config[$status] ?? ['class' => 'bg-secondary', 'text' => 'ไม่ทราบ'];
+                                            ?>
+                                            <span class="badge <?= $config['class'] ?>"><?= $config['text'] ?></span>
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
@@ -182,14 +206,14 @@ $articles_list = mysqli_query($conn, $articles_sql);
                                                     <form method="POST" action="sql/comment_hide.php" style="display: inline;">
                                                         <input type="hidden" name="comment_id" value="<?= $comment['comment_id'] ?>">
                                                         <button type="submit" class="btn btn-warning" title="ซ่อน" onclick="return confirm('ยืนยันการซ่อนความคิดเห็น?')">
-                                                            👁️‍🗨️ ซ่อน
+                                                            ซ่อน
                                                         </button>
                                                     </form>
                                                 <?php else: ?>
                                                     <form method="POST" action="sql/comment_restore.php" style="display: inline;">
                                                         <input type="hidden" name="comment_id" value="<?= $comment['comment_id'] ?>">
                                                         <button type="submit" class="btn btn-success" title="แสดง">
-                                                            👁️ แสดง
+                                                            แสดง
                                                         </button>
                                                     </form>
                                                 <?php endif; ?>
@@ -197,13 +221,13 @@ $articles_list = mysqli_query($conn, $articles_sql);
                                                 <form method="POST" action="sql/comment_delete.php" style="display: inline;">
                                                     <input type="hidden" name="comment_id" value="<?= $comment['comment_id'] ?>">
                                                     <button type="submit" class="btn btn-danger" title="ลบถาวร" onclick="return confirm('ยืนยันการลบถาวร? ไม่สามารถกู้คืนได้')">
-                                                        🗑️ ลบ
+                                                        ลบ
                                                     </button>
                                                 </form>
                                             </div>
                                         </td>
                                     </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
                                     <td colspan="7" class="text-center py-4">
@@ -218,7 +242,7 @@ $articles_list = mysqli_query($conn, $articles_sql);
         </div>
 
         <div class="mt-3 text-muted">
-            <small>รายการทั้งหมด: <?= mysqli_num_rows($comments) ?> รายการ</small>
+            <small>รายการทั้งหมด: <?= count($comments_data) ?> รายการ</small>
         </div>
     </div>
 

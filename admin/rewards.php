@@ -14,6 +14,26 @@ $sql = "SELECT r.*,
         ORDER BY r.created_at DESC";
 $result = mysqli_query($conn, $sql);
 
+// เก็บข้อมูลใน array
+$rewards_data = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $rewards_data[] = $row;
+}
+
+// Config หมวดหมู่
+$category_config = [
+    'food' => 'อาหาร',
+    'product' => 'สินค้า',
+    'voucher' => 'คูปอง',
+    'discount' => 'ส่วนลด'
+];
+
+// Config สถานะ
+$status_config = [
+    'active' => ['class' => 'bg-success', 'text' => 'เปิดใช้'],
+    'out_of_stock' => ['class' => 'bg-danger', 'text' => 'หมดสต็อก'],
+    'inactive' => ['class' => 'bg-secondary', 'text' => 'ปิดใช้']
+];
 
 ?>
 <!DOCTYPE html>
@@ -46,9 +66,9 @@ $result = mysqli_query($conn, $sql);
         <?php endif; ?>
 
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3>🎁 จัดการของรางวัล</h3>
+            <h3>จัดการของรางวัล</h3>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRewardModal">
-                ➕ เพิ่มของรางวัล
+                เพิ่มของรางวัล
             </button>
         </div>
 
@@ -70,30 +90,17 @@ $result = mysqli_query($conn, $sql);
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if(mysqli_num_rows($result) > 0): ?>
-                                <?php $i = 1; while($reward = mysqli_fetch_assoc($result)): ?>
+                            <?php if(count($rewards_data) > 0): ?>
+                                <?php $i = 1; foreach($rewards_data as $reward): ?>
                                     <?php
                                     // กำหนดสถานะสต็อก
-                                    $stock_class = 'stock-ok';
                                     $stock_quantity = $reward['stock_quantity'] ?? 0;
                                     $stock_text = $stock_quantity == 0 ? 'ไม่จำกัด' : $stock_quantity;
+                                    $stock_class = 'badge bg-success';
 
-                                    if ($stock_quantity > 0) {
-                                        if ($stock_quantity <= 5) {
-                                            $stock_class = 'stock-low';
-                                        } elseif ($stock_quantity == 0) {
-                                            $stock_class = 'stock-out';
-                                            $stock_text = 'หมด';
-                                        }
+                                    if ($stock_quantity > 0 && $stock_quantity <= 5) {
+                                        $stock_class = 'badge bg-warning';
                                     }
-
-                                    // หมวดหมู่
-                                    $category_text = [
-                                        'food' => 'อาหาร',
-                                        'product' => 'สินค้า',
-                                        'voucher' => 'คูปอง',
-                                        'discount' => 'ส่วนลด'
-                                    ];
                                     ?>
                                     <tr>
                                         <td><?= $i++ ?></td>
@@ -102,29 +109,27 @@ $result = mysqli_query($conn, $sql);
                                             <br><small class="text-muted"><?= htmlspecialchars(substr($reward['description'], 0, 50)) ?>...</small>
                                         </td>
                                         <td>
-                                            <span class="points-badge"><?= number_format($reward['points_required']) ?></span>
+                                            <span class="badge bg-info"><?= number_format($reward['points_required']) ?></span>
                                         </td>
-                                        <td><?= $category_text[$reward['category']] ?? '-' ?></td>
+                                        <td><?= $category_config[$reward['category']] ?? '-' ?></td>
                                         <td>
-                                            <span class="stock-badge <?= $stock_class ?>"><?= $stock_text ?></span>
+                                            <span class="<?= $stock_class ?>"><?= $stock_text ?></span>
                                         </td>
                                         <td class="text-center"><?= number_format($reward['total_redeemed']) ?></td>
                                         <td>
-                                            <?php if(isset($reward['status']) && $reward['status'] == 'active'): ?>
-                                                <span class="badge bg-success">เปิดใช้</span>
-                                            <?php elseif(isset($reward['status']) && $reward['status'] == 'out_of_stock'): ?>
-                                                <span class="badge bg-danger">หมดสต็อก</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-secondary">ปิดใช้</span>
-                                            <?php endif; ?>
+                                            <?php
+                                            $status = $reward['status'] ?? 'inactive';
+                                            $config = $status_config[$status] ?? $status_config['inactive'];
+                                            ?>
+                                            <span class="badge <?= $config['class'] ?>"><?= $config['text'] ?></span>
                                         </td>
                                         <td class="text-center">
-                                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?= $reward['reward_id'] ?>">👁️</button>
-                                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $reward['reward_id'] ?>">✏️</button>
-                                            <button class="btn btn-danger btn-sm" onclick="deleteReward(<?= $reward['reward_id'] ?>)">🗑️</button>
+                                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?= $reward['reward_id'] ?>">ดู</button>
+                                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $reward['reward_id'] ?>">แก้ไข</button>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteReward(<?= $reward['reward_id'] ?>)">ลบ</button>
                                         </td>
                                     </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
                                     <td colspan="8" class="text-center text-muted">ยังไม่มีข้อมูลของรางวัล</td>
@@ -138,16 +143,13 @@ $result = mysqli_query($conn, $sql);
     </div>
 
     <!-- Modals -->
-    <?php
-    mysqli_data_seek($result, 0); // Reset result pointer
-    while($reward = mysqli_fetch_assoc($result)):
-    ?>
+    <?php foreach($rewards_data as $reward): ?>
         <!-- View Modal -->
         <div class="modal fade" id="viewModal<?= $reward['reward_id'] ?>" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">🎁 รายละเอียดของรางวัล</h5>
+                        <h5 class="modal-title">รายละเอียดของรางวัล</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -166,7 +168,7 @@ $result = mysqli_query($conn, $sql);
                             </tr>
                             <tr>
                                 <th>หมวดหมู่:</th>
-                                <td><?= ['food'=>'อาหาร','product'=>'สินค้า','voucher'=>'คูปอง','discount'=>'ส่วนลด'][$reward['category']] ?></td>
+                                <td><?= $category_config[$reward['category']] ?? '-' ?></td>
                             </tr>
                             <tr>
                                 <th>จำนวนคงเหลือ:</th>
@@ -175,11 +177,11 @@ $result = mysqli_query($conn, $sql);
                             <tr>
                                 <th>สถานะ:</th>
                                 <td>
-                                    <?php if(isset($reward['status']) && $reward['status'] == 'active'): ?>
-                                        <span class="badge bg-success">เปิดใช้</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-secondary">ปิดใช้</span>
-                                    <?php endif; ?>
+                                    <?php
+                                    $status = $reward['status'] ?? 'inactive';
+                                    $config = $status_config[$status] ?? $status_config['inactive'];
+                                    ?>
+                                    <span class="badge <?= $config['class'] ?>"><?= $config['text'] ?></span>
                                 </td>
                             </tr>
                         </table>
@@ -195,7 +197,7 @@ $result = mysqli_query($conn, $sql);
                     <form action="sql/reward_edit.php" method="POST">
                         <input type="hidden" name="reward_id" value="<?= $reward['reward_id'] ?>">
                         <div class="modal-header">
-                            <h5 class="modal-title">✏️ แก้ไขของรางวัล</h5>
+                            <h5 class="modal-title">แก้ไขของรางวัล</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
@@ -214,10 +216,11 @@ $result = mysqli_query($conn, $sql);
                             <div class="mb-3">
                                 <label class="form-label">หมวดหมู่ <span class="text-danger">*</span></label>
                                 <select name="category" class="form-select" required>
-                                    <option value="food" <?= $reward['category']=='food' ? 'selected' : '' ?>>อาหาร</option>
-                                    <option value="product" <?= $reward['category']=='product' ? 'selected' : '' ?>>สินค้า</option>
-                                    <option value="voucher" <?= $reward['category']=='voucher' ? 'selected' : '' ?>>คูปอง</option>
-                                    <option value="discount" <?= $reward['category']=='discount' ? 'selected' : '' ?>>ส่วนลด</option>
+                                    <?php foreach ($category_config as $key => $label): ?>
+                                        <option value="<?= $key ?>" <?= $reward['category']==$key ? 'selected' : '' ?>>
+                                            <?= $label ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -228,9 +231,11 @@ $result = mysqli_query($conn, $sql);
                             <div class="mb-3">
                                 <label class="form-label">สถานะ <span class="text-danger">*</span></label>
                                 <select name="status" class="form-select" required>
-                                    <option value="active" <?= (isset($reward['status']) && $reward['status']=='active') ? 'selected' : '' ?>>เปิดใช้</option>
-                                    <option value="inactive" <?= (isset($reward['status']) && $reward['status']=='inactive') ? 'selected' : '' ?>>ปิดใช้</option>
-                                    <option value="out_of_stock" <?= (isset($reward['status']) && $reward['status']=='out_of_stock') ? 'selected' : '' ?>>หมดสต็อก</option>
+                                    <?php foreach ($status_config as $key => $config): ?>
+                                        <option value="<?= $key ?>" <?= (isset($reward['status']) && $reward['status']==$key) ? 'selected' : '' ?>>
+                                            <?= $config['text'] ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
@@ -242,7 +247,7 @@ $result = mysqli_query($conn, $sql);
                 </div>
             </div>
         </div>
-    <?php endwhile; ?>
+    <?php endforeach; ?>
 
     <!-- Add Reward Modal -->
     <div class="modal fade" id="addRewardModal" tabindex="-1">
@@ -250,7 +255,7 @@ $result = mysqli_query($conn, $sql);
             <div class="modal-content">
                 <form action="sql/reward_add.php" method="POST">
                     <div class="modal-header">
-                        <h5 class="modal-title">➕ เพิ่มของรางวัลใหม่</h5>
+                        <h5 class="modal-title">เพิ่มของรางวัลใหม่</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -269,10 +274,9 @@ $result = mysqli_query($conn, $sql);
                         <div class="mb-3">
                             <label class="form-label">หมวดหมู่ <span class="text-danger">*</span></label>
                             <select name="category" class="form-select" required>
-                                <option value="product">สินค้า</option>
-                                <option value="food">อาหาร</option>
-                                <option value="voucher">คูปอง</option>
-                                <option value="discount">ส่วนลด</option>
+                                <?php foreach ($category_config as $key => $label): ?>
+                                    <option value="<?= $key ?>"><?= $label ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -283,8 +287,8 @@ $result = mysqli_query($conn, $sql);
                         <div class="mb-3">
                             <label class="form-label">สถานะ <span class="text-danger">*</span></label>
                             <select name="status" class="form-select" required>
-                                <option value="active">เปิดใช้</option>
-                                <option value="inactive">ปิดใช้</option>
+                                <option value="active"><?= $status_config['active']['text'] ?></option>
+                                <option value="inactive"><?= $status_config['inactive']['text'] ?></option>
                             </select>
                         </div>
                     </div>

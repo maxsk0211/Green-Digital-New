@@ -10,7 +10,7 @@ if (!isset($_SESSION['admin_id'])) {
 // รับค่าการค้นหา
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Query บทความทั้งหมด พร้อมคำนวณสถานะแสดงผล
+// Query บทความทั้งหมด
 $sql = "SELECT a.*, ad.full_name as author_name,
         CASE
             WHEN a.status = 'draft' THEN 'draft'
@@ -34,10 +34,36 @@ if (!empty($search)) {
 $sql .= " ORDER BY a.created_at DESC";
 $result = mysqli_query($conn, $sql);
 
-// ตรวจสอบว่า query สำเร็จหรือไม่
 if (!$result) {
     die("Error in query: " . mysqli_error($conn));
 }
+
+// เก็บ articles ใน array
+$articles = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $articles[] = $row;
+}
+
+// Config
+$categories = ['การรีไซเคิล', 'สิ่งแวดล้อม', 'การลดขยะ', 'เทคโนโลยีสีเขียว', 'อื่นๆ'];
+
+$status_config = [
+    'active' => ['class' => 'bg-success', 'text' => 'กำลังแสดง'],
+    'scheduled' => ['class' => 'bg-warning text-dark', 'text' => 'รอแสดง'],
+    'expired' => ['class' => 'bg-secondary', 'text' => 'หมดอายุ'],
+    'draft' => ['class' => 'bg-secondary', 'text' => 'แบบร่าง']
+];
+
+$success_messages = [
+    'added' => 'เพิ่มบทความสำเร็จ!',
+    'updated' => 'แก้ไขบทความสำเร็จ!',
+    'deleted' => 'ลบบทความสำเร็จ!'
+];
+
+$error_messages = [
+    'failed' => 'ไม่สามารถดำเนินการได้ กรุณาลองใหม่อีกครั้ง',
+    'upload_failed' => 'อัปโหลดรูปภาพไม่สำเร็จ'
+];
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -51,34 +77,26 @@ if (!$result) {
     <?php include 'navbar.php'; ?>
 
     <div class="container mt-4">
-        <!-- Alert Messages -->
-        <?php if(isset($_GET['success'])): ?>
+        <!-- Alert -->
+        <?php if (isset($_GET['success']) && isset($success_messages[$_GET['success']])): ?>
             <div class="alert alert-success alert-dismissible fade show">
-                <strong>สำเร็จ!</strong>
-                <?php
-                    if($_GET['success'] == 'added') echo 'เพิ่มบทความสำเร็จ!';
-                    if($_GET['success'] == 'updated') echo 'แก้ไขบทความสำเร็จ!';
-                    if($_GET['success'] == 'deleted') echo 'ลบบทความสำเร็จ!';
-                ?>
+                <strong>สำเร็จ!</strong> <?php echo $success_messages[$_GET['success']]; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
 
-        <?php if(isset($_GET['error'])): ?>
+        <?php if (isset($_GET['error']) && isset($error_messages[$_GET['error']])): ?>
             <div class="alert alert-danger alert-dismissible fade show">
-                <strong>เกิดข้อผิดพลาด!</strong>
-                <?php
-                    if($_GET['error'] == 'failed') echo 'ไม่สามารถดำเนินการได้ กรุณาลองใหม่อีกครั้ง';
-                    if($_GET['error'] == 'upload_failed') echo 'อัปโหลดรูปภาพไม่สำเร็จ';
-                ?>
+                <strong>เกิดข้อผิดพลาด!</strong> <?php echo $error_messages[$_GET['error']]; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
 
+        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3>📚 จัดการบทความ</h3>
+            <h3>จัดการบทความ</h3>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addArticleModal">
-                ➕ เพิ่มบทความใหม่
+                เพิ่มบทความใหม่
             </button>
         </div>
 
@@ -87,9 +105,11 @@ if (!$result) {
             <div class="card-body">
                 <form method="GET" action="">
                     <div class="input-group">
-                        <input type="text" name="search" class="form-control" placeholder="ค้นหา: หัวข้อ, เนื้อหา, หมวดหมู่, ผู้เขียน..." value="<?php echo htmlspecialchars($search); ?>">
-                        <button type="submit" class="btn btn-primary">🔍 ค้นหา</button>
-                        <?php if(!empty($search)): ?>
+                        <input type="text" name="search" class="form-control"
+                               placeholder="ค้นหา: หัวข้อ, เนื้อหา, หมวดหมู่, ผู้เขียน..."
+                               value="<?php echo htmlspecialchars($search); ?>">
+                        <button type="submit" class="btn btn-primary">ค้นหา</button>
+                        <?php if (!empty($search)): ?>
                             <a href="articles.php" class="btn btn-secondary">ล้าง</a>
                         <?php endif; ?>
                     </div>
@@ -102,7 +122,7 @@ if (!$result) {
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th width="80">รูปภาพ</th>
                                 <th>หัวข้อ</th>
@@ -114,62 +134,41 @@ if (!$result) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if(mysqli_num_rows($result) > 0): ?>
-                                <?php while($article = mysqli_fetch_assoc($result)): ?>
+                            <?php if (count($articles) > 0): ?>
+                                <?php foreach ($articles as $article): ?>
                                     <tr>
                                         <td>
-                                            <?php if($article['image_url']): ?>
-                                                <img src="<?php echo "../" . $article['image_url']; ?>" class="img-thumbnail">
+                                            <?php if ($article['image_url']): ?>
+                                                <img src="<?php echo "../" . $article['image_url']; ?>" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
                                             <?php else: ?>
-                                                <div class="bg-secondary text-white d-flex align-items-center justify-content-center">📄</div>
+                                                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                                    <span>ไม่มี</span>
+                                                </div>
                                             <?php endif; ?>
                                         </td>
-                                        <td>
-                                            <strong><?php echo htmlspecialchars($article['title']); ?></strong>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-info"><?php echo $article['category']; ?></span>
-                                        </td>
+                                        <td><strong><?php echo htmlspecialchars($article['title']); ?></strong></td>
+                                        <td><span class="badge bg-info"><?php echo $article['category']; ?></span></td>
                                         <td><?php echo $article['author_name']; ?></td>
                                         <td>
-                                            <?php
-                                            switch($article['display_status']) {
-                                                case 'active':
-                                                    echo '<span class="badge bg-success">กำลังแสดง</span>';
-                                                    break;
-                                                case 'scheduled':
-                                                    echo '<span class="badge bg-warning text-dark">รอแสดง</span>';
-                                                    break;
-                                                case 'expired':
-                                                    echo '<span class="badge bg-secondary">หมดอายุ</span>';
-                                                    break;
-                                                case 'draft':
-                                                    echo '<span class="badge bg-secondary">แบบร่าง</span>';
-                                                    break;
-                                            }
-                                            ?>
+                                            <span class="badge <?php echo $status_config[$article['display_status']]['class']; ?>">
+                                                <?php echo $status_config[$article['display_status']]['text']; ?>
+                                            </span>
                                         </td>
                                         <td>
-                                            <?php if($article['status'] == 'published'): ?>
+                                            <?php if ($article['status'] == 'published'): ?>
                                                 <small>
                                                     <strong>เริ่ม:</strong> <?php echo date('d/m/Y H:i', strtotime($article['published_start'])); ?><br>
                                                     <strong>สิ้นสุด:</strong>
-                                                    <?php
-                                                    if($article['published_end']) {
-                                                        echo date('d/m/Y H:i', strtotime($article['published_end']));
-                                                    } else {
-                                                        echo '<span class="text-muted">ไม่จำกัด</span>';
-                                                    }
-                                                    ?>
+                                                    <?php echo $article['published_end'] ? date('d/m/Y H:i', strtotime($article['published_end'])) : '<span class="text-muted">ไม่จำกัด</span>'; ?>
                                                 </small>
                                             <?php else: ?>
                                                 <small class="text-muted">-</small>
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-center">
-                                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?php echo $article['article_id']; ?>">👁️</button>
-                                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $article['article_id']; ?>">✏️</button>
-                                            <button class="btn btn-danger btn-sm" onclick="deleteArticle(<?php echo $article['article_id']; ?>)">🗑️</button>
+                                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?php echo $article['article_id']; ?>">ดู</button>
+                                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $article['article_id']; ?>">แก้ไข</button>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteArticle(<?php echo $article['article_id']; ?>)">ลบ</button>
                                         </td>
                                     </tr>
 
@@ -178,12 +177,12 @@ if (!$result) {
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">📖 รายละเอียดบทความ</h5>
+                                                    <h5 class="modal-title">รายละเอียดบทความ</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <?php if($article['image_url']): ?>
-                                                        <img src="<?php echo "../" .$article['image_url']; ?>" class="img-fluid mb-3">
+                                                    <?php if ($article['image_url']): ?>
+                                                        <img src="<?php echo "../" . $article['image_url']; ?>" class="img-fluid mb-3">
                                                     <?php endif; ?>
                                                     <h4><?php echo htmlspecialchars($article['title']); ?></h4>
                                                     <p class="text-muted">
@@ -207,7 +206,7 @@ if (!$result) {
                                                 <form action="sql/article_edit.php" method="POST" enctype="multipart/form-data">
                                                     <input type="hidden" name="article_id" value="<?php echo $article['article_id']; ?>">
                                                     <div class="modal-header">
-                                                        <h5 class="modal-title">✏️ แก้ไขบทความ</h5>
+                                                        <h5 class="modal-title">แก้ไขบทความ</h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                     </div>
                                                     <div class="modal-body">
@@ -218,11 +217,11 @@ if (!$result) {
                                                         <div class="mb-3">
                                                             <label class="form-label">หมวดหมู่ <span class="text-danger">*</span></label>
                                                             <select name="category" class="form-select" required>
-                                                                <option value="การรีไซเคิล" <?php if($article['category']=='การรีไซเคิล') echo 'selected'; ?>>การรีไซเคิล</option>
-                                                                <option value="สิ่งแวดล้อม" <?php if($article['category']=='สิ่งแวดล้อม') echo 'selected'; ?>>สิ่งแวดล้อม</option>
-                                                                <option value="การลดขยะ" <?php if($article['category']=='การลดขยะ') echo 'selected'; ?>>การลดขยะ</option>
-                                                                <option value="เทคโนโลยีสีเขียว" <?php if($article['category']=='เทคโนโลยีสีเขียว') echo 'selected'; ?>>เทคโนโลยีสีเขียว</option>
-                                                                <option value="อื่นๆ" <?php if($article['category']=='อื่นๆ') echo 'selected'; ?>>อื่นๆ</option>
+                                                                <?php foreach ($categories as $cat): ?>
+                                                                    <option value="<?php echo $cat; ?>" <?php echo $article['category'] == $cat ? 'selected' : ''; ?>>
+                                                                        <?php echo $cat; ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
                                                             </select>
                                                         </div>
                                                         <div class="mb-3">
@@ -231,9 +230,9 @@ if (!$result) {
                                                         </div>
                                                         <div class="mb-3">
                                                             <label class="form-label">รูปภาพ (ไม่เลือกหากไม่ต้องการเปลี่ยน)</label>
-                                                            <?php if($article['image_url']): ?>
+                                                            <?php if ($article['image_url']): ?>
                                                                 <div class="mb-2">
-                                                                    <img src="<?php echo "../" .$article['image_url']; ?>" class="img-thumbnail">
+                                                                    <img src="<?php echo "../" . $article['image_url']; ?>" class="img-thumbnail" style="max-width: 200px;">
                                                                 </div>
                                                             <?php endif; ?>
                                                             <input type="file" name="image" class="form-control" accept="image/*">
@@ -241,19 +240,18 @@ if (!$result) {
                                                         <div class="mb-3">
                                                             <label class="form-label">สถานะ <span class="text-danger">*</span></label>
                                                             <select name="status" class="form-select" id="status_edit_<?php echo $article['article_id']; ?>" required onchange="toggleScheduleFields('edit', <?php echo $article['article_id']; ?>)">
-                                                                <option value="draft" <?php if($article['status']=='draft') echo 'selected'; ?>>แบบร่าง</option>
-                                                                <option value="published" <?php if($article['status']=='published') echo 'selected'; ?>>เผยแพร่</option>
+                                                                <option value="draft" <?php echo $article['status'] == 'draft' ? 'selected' : ''; ?>>แบบร่าง</option>
+                                                                <option value="published" <?php echo $article['status'] == 'published' ? 'selected' : ''; ?>>เผยแพร่</option>
                                                             </select>
                                                         </div>
 
-                                                        <div id="schedule_fields_edit_<?php echo $article['article_id']; ?>" class="<?php echo $article['status']=='draft' ? 'd-none' : ''; ?>">
+                                                        <div id="schedule_fields_edit_<?php echo $article['article_id']; ?>" class="<?php echo $article['status'] == 'draft' ? 'd-none' : ''; ?>">
                                                             <div class="mb-3">
                                                                 <label class="form-label">วันเวลาเริ่มแสดง <span class="text-danger">*</span></label>
                                                                 <input type="datetime-local" name="published_start" class="form-control"
                                                                     value="<?php echo $article['published_start'] ? date('Y-m-d\TH:i', strtotime($article['published_start'])) : date('Y-m-d\TH:i'); ?>">
                                                                 <small class="text-muted">ถ้าไม่ระบุ จะใช้เวลาปัจจุบัน</small>
                                                             </div>
-
                                                             <div class="mb-3">
                                                                 <label class="form-label">วันเวลาสิ้นสุดการแสดง</label>
                                                                 <input type="datetime-local" name="published_end" class="form-control" id="published_end_edit_<?php echo $article['article_id']; ?>"
@@ -263,9 +261,7 @@ if (!$result) {
                                                                     <input class="form-check-input" type="checkbox" id="no_expiry_edit_<?php echo $article['article_id']; ?>"
                                                                         <?php echo !$article['published_end'] ? 'checked' : ''; ?>
                                                                         onchange="toggleEndDate('edit', <?php echo $article['article_id']; ?>)">
-                                                                    <label class="form-check-label" for="no_expiry_edit_<?php echo $article['article_id']; ?>">
-                                                                        ไม่มีวันหมดอายุ
-                                                                    </label>
+                                                                    <label class="form-check-label">ไม่มีวันหมดอายุ</label>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -278,7 +274,7 @@ if (!$result) {
                                             </div>
                                         </div>
                                     </div>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
                                     <td colspan="7" class="text-center text-muted">ยังไม่มีบทความ</td>
@@ -297,7 +293,7 @@ if (!$result) {
             <div class="modal-content">
                 <form action="sql/article_add.php" method="POST" enctype="multipart/form-data">
                     <div class="modal-header">
-                        <h5 class="modal-title">➕ เพิ่มบทความใหม่</h5>
+                        <h5 class="modal-title">เพิ่มบทความใหม่</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -309,11 +305,9 @@ if (!$result) {
                             <label class="form-label">หมวดหมู่ <span class="text-danger">*</span></label>
                             <select name="category" class="form-select" required>
                                 <option value="">-- เลือกหมวดหมู่ --</option>
-                                <option value="การรีไซเคิล">การรีไซเคิล</option>
-                                <option value="สิ่งแวดล้อม">สิ่งแวดล้อม</option>
-                                <option value="การลดขยะ">การลดขยะ</option>
-                                <option value="เทคโนโลยีสีเขียว">เทคโนโลยีสีเขียว</option>
-                                <option value="อื่นๆ">อื่นๆ</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?php echo $cat; ?>"><?php echo $cat; ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -339,15 +333,12 @@ if (!$result) {
                                 <input type="datetime-local" name="published_start" class="form-control" value="<?php echo date('Y-m-d\TH:i'); ?>">
                                 <small class="text-muted">ถ้าไม่ระบุ จะใช้เวลาปัจจุบัน</small>
                             </div>
-
                             <div class="mb-3">
                                 <label class="form-label">วันเวลาสิ้นสุดการแสดง</label>
                                 <input type="datetime-local" name="published_end" class="form-control" id="published_end_add_0" disabled>
                                 <div class="form-check mt-2">
                                     <input class="form-check-input" type="checkbox" id="no_expiry_add_0" checked onchange="toggleEndDate('add', 0)">
-                                    <label class="form-check-label" for="no_expiry_add_0">
-                                        ไม่มีวันหมดอายุ
-                                    </label>
+                                    <label class="form-check-label">ไม่มีวันหมดอายุ</label>
                                 </div>
                             </div>
                         </div>
@@ -364,12 +355,11 @@ if (!$result) {
     <script src="../js/bootstrap.bundle.min.js"></script>
     <script>
         function deleteArticle(id) {
-            if(confirm('ต้องการลบบทความนี้หรือไม่?')) {
+            if (confirm('ต้องการลบบทความนี้หรือไม่?')) {
                 window.location.href = 'sql/article_delete.php?id=' + id;
             }
         }
 
-        // Toggle schedule fields based on status
         function toggleScheduleFields(type, id) {
             const statusSelect = document.getElementById('status_' + type + (type === 'add' ? '' : '_' + id));
             const scheduleFields = document.getElementById('schedule_fields_' + type + '_' + id);
@@ -381,7 +371,6 @@ if (!$result) {
             }
         }
 
-        // Toggle end date field
         function toggleEndDate(type, id) {
             const checkbox = document.getElementById('no_expiry_' + type + '_' + id);
             const endDateInput = document.getElementById('published_end_' + type + '_' + id);

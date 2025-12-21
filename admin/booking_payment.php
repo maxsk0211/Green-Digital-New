@@ -66,138 +66,147 @@ if ($items->num_rows > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สรุปการชำระเงิน #<?php echo str_pad($booking_id, 6, '0', STR_PAD_LEFT); ?> - Green Digital Admin</title>
+    <title>สรุปการชำระเงิน - Green Digital Admin</title>
     <link rel="stylesheet" href="../css/bootstrap.min.css">
 </head>
 <body>
     <?php include 'navbar.php'; ?>
 
-    <div class="container-fluid mt-4 mb-5">
-        <!-- Back Button -->
+    <div class="container mt-4 mb-5">
+        <!-- ปุ่มกลับ -->
         <div class="mb-3">
-            <a href="booking_detail.php?id=<?php echo $booking_id; ?>" class="btn btn-sm btn-outline-secondary">← กลับ</a>
+            <a href="booking_detail.php?id=<?php echo $booking_id; ?>" class="btn btn-secondary">← กลับ</a>
         </div>
 
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h2>💰 สรุปการชำระเงิน</h2>
-                <p class="text-muted mb-0">การจอง #<?php echo str_pad($booking_id, 6, '0', STR_PAD_LEFT); ?></p>
-            </div>
+        <!-- หัวข้อ -->
+        <div class="mb-4">
+            <h2>สรุปการชำระเงิน</h2>
+            <p class="text-muted">การจอง #<?php echo str_pad($booking_id, 6, '0', STR_PAD_LEFT); ?></p>
         </div>
 
         <div class="row">
-            <!-- Left Column -->
+            <!-- ฝั่งซ้าย -->
             <div class="col-lg-8">
-                <!-- Customer Info -->
-                <div class="detail-card">
-                    <h5 class="mb-3">👤 ข้อมูลลูกค้า</h5>
-                    <div class="row">
-                        <div class="col-md-6 mb-2">
-                            <strong>ชื่อ-นามสกุล:</strong><br>
-                            <?php echo htmlspecialchars($booking['first_name'] . ' ' . $booking['last_name']); ?>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <strong>เบอร์โทร:</strong><br>
-                            <?php echo htmlspecialchars($booking['phone']); ?>
-                        </div>
-                        <div class="col-12 mb-2">
-                            <strong>ที่อยู่รับขยะ:</strong><br>
-                            <?php echo nl2br(htmlspecialchars($booking['pickup_address'])); ?>
+                <!-- ข้อมูลลูกค้า -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">ข้อมูลลูกค้า</h5>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <strong>ชื่อ-นามสกุล:</strong><br>
+                                <?php echo htmlspecialchars($booking['first_name'] . ' ' . $booking['last_name']); ?>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <strong>เบอร์โทร:</strong><br>
+                                <?php echo htmlspecialchars($booking['phone']); ?>
+                            </div>
+                            <div class="col-12 mb-2">
+                                <strong>ที่อยู่รับขยะ:</strong><br>
+                                <?php echo nl2br(htmlspecialchars($booking['pickup_address'])); ?>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Items List -->
-                <div class="detail-card">
-                    <h5 class="mb-3">♻️ รายการขยะ</h5>
-                    <?php if (count($items_data) > 0): ?>
-                        <?php foreach ($items_data as $item): ?>
-                            <div class="item-row">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
-                                        <h6 class="mb-1"><?php echo htmlspecialchars($item['type_name']); ?></h6>
-                                        <span class="badge bg-secondary text-uppercase"><?php echo $item['category']; ?></span>
+                <!-- รายการขยะ -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">รายการขยะ</h5>
+                        <hr>
+                        <?php if (count($items_data) > 0): ?>
+                            <?php foreach ($items_data as $item): ?>
+                                <div class="border-start border-success border-4 bg-light p-3 mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <div>
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($item['type_name']); ?></h6>
+                                            <span class="badge bg-secondary"><?php echo $item['category']; ?></span>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-success"><?php echo number_format($item['price_per_kg'], 2); ?> ฿/kg</span>
+                                        </div>
                                     </div>
-                                    <div class="text-end">
-                                        <span class="badge bg-success"><?php echo number_format($item['price_per_kg'], 2); ?> ฿/kg</span>
+                                    <div class="row text-center mt-2">
+                                        <div class="col-4">
+                                            <small class="text-muted">น้ำหนัก</small><br>
+                                            <strong><?php echo number_format($item['quantity'], 2); ?> kg</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-muted">ราคารวม</small><br>
+                                            <strong class="text-success"><?php echo number_format($item['subtotal'], 2); ?> ฿</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-muted">CO2 ลดได้</small><br>
+                                            <strong class="text-info"><?php echo number_format($item['quantity'] * $item['co2_reduction'], 2); ?> kg</strong>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="row text-center mt-2">
-                                    <div class="col-4">
-                                        <small class="text-muted">น้ำหนัก</small><br>
-                                        <strong><?php echo number_format($item['quantity'], 2); ?> kg</strong>
-                                    </div>
-                                    <div class="col-4">
-                                        <small class="text-muted">ราคารวม</small><br>
-                                        <strong class="text-success"><?php echo number_format($item['subtotal'], 2); ?> ฿</strong>
-                                    </div>
-                                    <div class="col-4">
-                                        <small class="text-muted">CO2 ลดได้</small><br>
-                                        <strong class="text-info"><?php echo number_format($item['quantity'] * $item['co2_reduction'], 2); ?> kg</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="text-muted">ไม่พบรายการขยะ</p>
-                    <?php endif; ?>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p class="text-muted">ไม่พบรายการขยะ</p>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
 
-            <!-- Right Column -->
+            <!-- ฝั่งขวา -->
             <div class="col-lg-4">
-                <!-- Summary -->
-                <div class="summary-card">
-                    <h4 class="mb-4">📊 สรุปยอดรวม</h4>
-                    <div class="summary-item">
-                        <span>น้ำหนักรวม:</span>
-                        <span><?php echo number_format($total_weight, 2); ?> kg</span>
-                    </div>
-                    <div class="summary-item">
-                        <span>CO2 ลดได้:</span>
-                        <span><?php echo number_format($total_co2, 2); ?> kg</span>
-                    </div>
-                    <div class="summary-item">
-                        <span>ยอดรวมทั้งหมด:</span>
-                        <span><?php echo number_format($total_amount, 2); ?> ฿</span>
+                <!-- สรุปยอดรวม -->
+                <div class="card bg-success text-white mb-3">
+                    <div class="card-body">
+                        <h5 class="mb-3">สรุปยอดรวม</h5>
+                        <div class="d-flex justify-content-between border-bottom border-white py-2">
+                            <span>น้ำหนักรวม:</span>
+                            <span><?php echo number_format($total_weight, 2); ?> kg</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-bottom border-white py-2">
+                            <span>CO2 ลดได้:</span>
+                            <span><?php echo number_format($total_co2, 2); ?> kg</span>
+                        </div>
+                        <div class="d-flex justify-content-between pt-3">
+                            <span><strong>ยอดรวมทั้งหมด:</strong></span>
+                            <span><strong class="fs-5"><?php echo number_format($total_amount, 2); ?> ฿</strong></span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Payment Form -->
-                <div class="detail-card">
-                    <h5 class="mb-3">💳 ชำระเงิน</h5>
-                    <form method="POST" action="sql/booking_complete_payment.php">
-                        <input type="hidden" name="booking_id" value="<?php echo $booking_id; ?>">
-                        <input type="hidden" name="total_weight" value="<?php echo $total_weight; ?>">
-                        <input type="hidden" name="total_amount" value="<?php echo $total_amount; ?>">
+                <!-- ฟอร์มชำระเงิน -->
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">ชำระเงิน</h5>
+                        <hr>
+                        <form method="POST" action="sql/booking_complete_payment.php">
+                            <input type="hidden" name="booking_id" value="<?php echo $booking_id; ?>">
+                            <input type="hidden" name="total_weight" value="<?php echo $total_weight; ?>">
+                            <input type="hidden" name="total_amount" value="<?php echo $total_amount; ?>">
 
-                        <div class="mb-3">
-                            <label class="form-label">วิธีการชำระเงิน</label>
-                            <select name="payment_method" class="form-select" required>
-                                <option value="">-- เลือกวิธีชำระ --</option>
-                                <option value="cash">เงินสด</option>
-                                <option value="bank_transfer">โอนเงิน</option>
-                                <option value="promptpay">พร้อมเพย์</option>
-                            </select>
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label">วิธีการชำระเงิน</label>
+                                <select name="payment_method" class="form-select" required>
+                                    <option value="">-- เลือกวิธีชำระ --</option>
+                                    <option value="cash">เงินสด</option>
+                                    <option value="bank_transfer">โอนเงิน</option>
+                                    <option value="promptpay">พร้อมเพย์</option>
+                                </select>
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">สถานะการชำระ</label>
-                            <select name="payment_status" class="form-select" required>
-                                <option value="paid">ชำระแล้ว</option>
-                                <option value="pending">รอชำระ</option>
-                            </select>
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label">สถานะการชำระ</label>
+                                <select name="payment_status" class="form-select" required>
+                                    <option value="paid">ชำระแล้ว</option>
+                                    <option value="pending">รอชำระ</option>
+                                </select>
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">หมายเหตุ (ถ้ามี)</label>
-                            <textarea name="notes" class="form-control" rows="3" placeholder="ระบุหมายเหตุเพิ่มเติม..."></textarea>
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+                                <textarea name="notes" class="form-control" rows="3" placeholder="ระบุหมายเหตุเพิ่มเติม..."></textarea>
+                            </div>
 
-                        <button type="submit" class="btn btn-success w-100 mb-2">✅ ยืนยันการชำระเงิน</button>
-                        <a href="booking_detail.php?id=<?php echo $booking_id; ?>" class="btn btn-outline-secondary w-100">ยกเลิก</a>
-                    </form>
+                            <button type="submit" class="btn btn-success w-100 mb-2">ยืนยันการชำระเงิน</button>
+                            <a href="booking_detail.php?id=<?php echo $booking_id; ?>" class="btn btn-outline-secondary w-100">ยกเลิก</a>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
