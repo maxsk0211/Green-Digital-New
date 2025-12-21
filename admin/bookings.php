@@ -93,6 +93,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>จัดการการจอง - Green Digital Admin</title>
     <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 
 <body>
@@ -125,53 +126,6 @@ while ($row = mysqli_fetch_assoc($status_result)) {
             <h2>📅 จัดการการจอง</h2>
         </div>
 
-        <!-- Status Summary -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <a href="?status=" class="text-decoration-none">
-                    <div
-                        class="card text-center <?php echo !isset($_GET['status']) || $_GET['status'] == '' ? 'bg-primary text-white' : ''; ?>">
-                        <div class="card-body">
-                            <h3 class="mb-0"><?php echo number_format(array_sum($status_counts)); ?></h3>
-                            <p class="mb-0">ทั้งหมด</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="?status=pending" class="text-decoration-none">
-                    <div
-                        class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'pending' ? 'bg-warning text-dark' : ''; ?>">
-                        <div class="card-body">
-                            <h3 class="mb-0"><?php echo number_format($status_counts['pending'] ?? 0); ?></h3>
-                            <p class="mb-0">รอดำเนินการ</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="?status=confirmed" class="text-decoration-none">
-                    <div
-                        class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'confirmed' ? 'bg-info text-white' : ''; ?>">
-                        <div class="card-body">
-                            <h3 class="mb-0"><?php echo number_format($status_counts['confirmed'] ?? 0); ?></h3>
-                            <p class="mb-0">ยืนยันแล้ว</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="?status=completed" class="text-decoration-none">
-                    <div
-                        class="card text-center <?php echo isset($_GET['status']) && $_GET['status'] == 'completed' ? 'bg-success text-white' : ''; ?>">
-                        <div class="card-body">
-                            <h3 class="mb-0"><?php echo number_format($status_counts['completed'] ?? 0); ?></h3>
-                            <p class="mb-0">เสร็จสิ้น </p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
 
         <!-- Filters -->
         <div class="card mb-4">
@@ -297,12 +251,27 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
+                                        <!-- ปุ่มดู -->
                                         <a href="booking_detail.php?id=<?php echo $booking['booking_id']; ?>"
-                                            class="btn btn-info btn-sm" title="รายละเอียด">👁️</a>
+                                            class="btn btn-info btn-sm" title="ดูรายละเอียด">
+                                            <i class="bi bi-eye"></i> ดู
+                                        </a>
+
+                                        <!-- ปุ่มยืนยัน: แสดงเฉพาะสถานะ pending -->
                                         <?php if ($booking['status'] == 'pending'): ?>
                                             <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
                                                 data-bs-target="#confirmModal<?php echo $booking['booking_id']; ?>"
-                                                title="ยืนยันการจอง">✅</button>
+                                                title="ยืนยันการจอง">
+                                                <i class="bi bi-check-circle"></i> ยืนยัน
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <!-- ปุ่มลบ: แสดงเฉพาะสถานะ cancelled -->
+                                        <?php if ($booking['status'] == 'cancelled'): ?>
+                                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
+                                                data-bs-target="#deleteModal<?php echo $booking['booking_id']; ?>" title="ลบ">
+                                                <i class="bi bi-trash"></i> ลบ
+                                            </button>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -322,7 +291,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
             </div>
         </div>
 
-        <!-- Modal สำหรับยืนยันการจอง (แยกออกจาก Loop) -->
+        <!-- Modal สำหรับยืนยันการจอง -->
         <?php
         // Reset pointer เพื่อ loop สร้าง modal
         if ($bookings && mysqli_num_rows($bookings) > 0) {
@@ -334,7 +303,7 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header bg-success text-white">
-                                    <h5 class="modal-title">✅ ยืนยันการจอง</h5>
+                                    <h5 class="modal-title"><i class="bi bi-check-circle"></i> ยืนยันการจอง</h5>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
@@ -351,7 +320,57 @@ while ($row = mysqli_fetch_assoc($status_result)) {
                                         <input type="hidden" name="status" value="confirmed">
                                         <div class="d-flex gap-2 justify-content-end">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                                            <button type="submit" class="btn btn-success">✅ ยืนยันการจอง</button>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="bi bi-check-circle"></i> ยืนยันการจอง
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
+                endif;
+            endwhile;
+        }
+        ?>
+
+        <!-- Modal สำหรับลบการจอง -->
+        <?php
+        // Reset pointer เพื่อ loop สร้าง modal
+        if ($bookings && mysqli_num_rows($bookings) > 0) {
+            mysqli_data_seek($bookings, 0);
+            while ($booking = mysqli_fetch_assoc($bookings)):
+                if ($booking['status'] == 'cancelled'):
+                    ?>
+                    <div class="modal fade" id="deleteModal<?php echo $booking['booking_id']; ?>" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title"><i class="bi bi-trash"></i> ลบการจอง</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        <strong>คำเตือน:</strong> การลบจะไม่สามารถกู้คืนได้!
+                                    </div>
+                                    <p>คุณต้องการลบการจอง #<?php echo str_pad($booking['booking_id'], 6, '0', STR_PAD_LEFT); ?>
+                                        ใช่หรือไม่?</p>
+                                    <p><strong>ลูกค้า:</strong>
+                                        <?php echo htmlspecialchars($booking['first_name'] . ' ' . $booking['last_name']); ?></p>
+                                    <p><strong>วันที่:</strong>
+                                        <?php echo date('d/m/Y H:i', strtotime($booking['booking_date'] . ' ' . $booking['booking_time'])); ?>
+                                        น.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <form method="POST" action="sql/booking_delete.php" class="w-100">
+                                        <input type="hidden" name="booking_id" value="<?php echo $booking['booking_id']; ?>">
+                                        <div class="d-flex gap-2 justify-content-end">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="bi bi-trash"></i> ลบการจอง
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
