@@ -31,7 +31,6 @@
                         <li><a class="dropdown-item" href="articles.php">บทความ</a></li>
                         <li><a class="dropdown-item" href="article_comments.php">จัดการความคิดเห็น</a></li>
                         <li><a class="dropdown-item" href="rewards.php">ของรางวัล</a></li>
-                        <li><a class="dropdown-item" href="promotions.php">โปรโมชั่น</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">

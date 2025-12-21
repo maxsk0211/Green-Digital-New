@@ -21,6 +21,39 @@ if (!empty($search)) {
 $sql .= " ORDER BY created_at DESC";
 
 $result = mysqli_query($conn, $sql);
+
+// เก็บข้อมูลใน array
+$users_data = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $users_data[] = $row;
+}
+
+// Config ระดับสมาชิก
+$level_config = [
+    'Bronze' => 'badge-bronze',
+    'Silver' => 'badge-silver',
+    'Gold' => 'badge-gold'
+];
+
+// Config สถานะ
+$status_config = [
+    'active' => ['class' => 'bg-success', 'text' => 'ใช้งานได้'],
+    'suspended' => ['class' => 'bg-danger', 'text' => 'ระงับการใช้งาน']
+];
+
+// Config ข้อความสำเร็จ
+$success_messages = [
+    'added' => 'เพิ่มสมาชิกสำเร็จ!',
+    'updated' => 'แก้ไขข้อมูลสมาชิกสำเร็จ!',
+    'deleted' => 'ลบสมาชิกสำเร็จ!'
+];
+
+// Config ข้อความผิดพลาด
+$error_messages = [
+    'email_exists' => 'Email นี้มีอยู่ในระบบแล้ว!',
+    'password_mismatch' => 'รหัสผ่านไม่ตรงกัน!',
+    'failed' => 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่!'
+];
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -43,11 +76,7 @@ $result = mysqli_query($conn, $sql);
         <?php if(isset($_GET['success'])): ?>
             <div class="alert alert-success alert-dismissible fade show">
                 <strong>สำเร็จ!</strong>
-                <?php
-                    if($_GET['success'] == 'added') echo 'เพิ่มสมาชิกสำเร็จ!';
-                    if($_GET['success'] == 'updated') echo 'แก้ไขข้อมูลสมาชิกสำเร็จ!';
-                    if($_GET['success'] == 'deleted') echo 'ลบสมาชิกสำเร็จ!';
-                ?>
+                <?= $success_messages[$_GET['success']] ?? '' ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
@@ -55,11 +84,7 @@ $result = mysqli_query($conn, $sql);
         <?php if(isset($_GET['error'])): ?>
             <div class="alert alert-danger alert-dismissible fade show">
                 <strong>ผิดพลาด!</strong>
-                <?php
-                    if($_GET['error'] == 'email_exists') echo 'Email นี้มีอยู่ในระบบแล้ว!';
-                    if($_GET['error'] == 'password_mismatch') echo 'รหัสผ่านไม่ตรงกัน!';
-                    if($_GET['error'] == 'failed') echo 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่!';
-                ?>
+                <?= $error_messages[$_GET['error']] ?? '' ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
@@ -73,7 +98,7 @@ $result = mysqli_query($conn, $sql);
                         <input type="text" name="search" class="form-control" placeholder="ค้นหาจาก ชื่อ, นามสกุล, Email, เบอร์โทร" value="<?php echo htmlspecialchars($search); ?>">
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">🔍 ค้นหา</button>
+                        <button type="submit" class="btn btn-primary w-100">ค้นหา</button>
                     </div>
                 </form>
             </div>
@@ -81,9 +106,9 @@ $result = mysqli_query($conn, $sql);
 
         <!-- ตารางสมาชิก -->
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0">👥 รายการสมาชิก (<?php echo mysqli_num_rows($result); ?> คน)</h4>
+            <h4 class="mb-0">รายการสมาชิก (<?= count($users_data) ?> คน)</h4>
             <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                ➕ เพิ่มสมาชิก
+                เพิ่มสมาชิก
             </button>
         </div>
         <div class="table-card">
@@ -104,40 +129,35 @@ $result = mysqli_query($conn, $sql);
                         </tr>
                     </thead>
                     <tbody>
-                        <?php
-                        $no = 1;
-                        while($user = mysqli_fetch_assoc($result)):
-                        ?>
+                        <?php $no = 1; foreach($users_data as $user): ?>
                         <tr>
-                            <td><?php echo $no++; ?></td>
-                            <td><?php echo htmlspecialchars($user['email']); ?></td>
-                            <td><strong><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></strong></td>
-                            <td><?php echo htmlspecialchars($user['phone']); ?></td>
-                            <td><?php echo htmlspecialchars($user['province']); ?></td>
+                            <td><?= $no++ ?></td>
+                            <td><?= htmlspecialchars($user['email']) ?></td>
+                            <td><strong><?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></strong></td>
+                            <td><?= htmlspecialchars($user['phone']) ?></td>
+                            <td><?= htmlspecialchars($user['province']) ?></td>
                             <td>
                                 <?php
-                                $badge_class = 'badge-bronze';
-                                if($user['user_level'] == 'Silver') $badge_class = 'badge-silver';
-                                if($user['user_level'] == 'Gold') $badge_class = 'badge-gold';
+                                $badge_class = $level_config[$user['user_level']] ?? 'badge-bronze';
                                 ?>
-                                <span class="badge <?php echo $badge_class; ?>"><?php echo $user['user_level']; ?></span>
+                                <span class="badge <?= $badge_class ?>"><?= $user['user_level'] ?></span>
                             </td>
-                            <td><?php echo number_format($user['points']); ?></td>
+                            <td><?= number_format($user['points']) ?></td>
                             <td>
-                                <?php if($user['status'] == 'active'): ?>
-                                    <span class="badge bg-success">ใช้งานได้</span>
-                                <?php else: ?>
-                                    <span class="badge bg-danger">ระงับการใช้งาน</span>
-                                <?php endif; ?>
+                                <?php
+                                $status = $user['status'];
+                                $config = $status_config[$status] ?? $status_config['active'];
+                                ?>
+                                <span class="badge <?= $config['class'] ?>"><?= $config['text'] ?></span>
                             </td>
-                            <td><?php echo date('d/m/Y', strtotime($user['created_at'])); ?></td>
+                            <td><?= date('d/m/Y', strtotime($user['created_at'])) ?></td>
                             <td class="text-center">
-                                <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?php echo $user['user_id']; ?>" title="ดูข้อมูล">👁️</button>
-                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $user['user_id']; ?>" title="แก้ไข">✏️</button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteUser(<?php echo $user['user_id']; ?>, '<?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>')" title="ลบ">🗑️</button>
+                                <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?= $user['user_id'] ?>" title="ดูข้อมูล">ดู</button>
+                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $user['user_id'] ?>" title="แก้ไข">แก้ไข</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteUser(<?= $user['user_id'] ?>, '<?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?>')" title="ลบ">ลบ</button>
                             </td>
                         </tr>
-                        <?php endwhile; ?>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -150,7 +170,7 @@ $result = mysqli_query($conn, $sql);
             <div class="modal-content">
                 <form method="POST" action="sql/user_add.php">
                     <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title">➕ เพิ่มสมาชิกใหม่</h5>
+                        <h5 class="modal-title">เพิ่มสมาชิกใหม่</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
