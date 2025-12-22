@@ -135,6 +135,8 @@
         .color-red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
         .color-violet { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
         .color-amber { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .color-teal { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); }
+        .color-rose { background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); }
         
         table {
             width: 100%;
@@ -286,15 +288,15 @@
             <h2>📊 สรุปโครงสร้างฐานข้อมูล</h2>
             <div class="stats">
                 <div class="stat-box">
-                    <div class="stat-number">18</div>
+                    <div class="stat-number">15</div>
                     <div>ตาราง (Tables)</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number">190+</div>
+                    <div class="stat-number">140+</div>
                     <div>ฟิลด์ (Fields)</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number">16+</div>
+                    <div class="stat-number">14</div>
                     <div>ความสัมพันธ์ (Relations)</div>
                 </div>
             </div>
@@ -386,6 +388,12 @@
                         <td>ระดับ: Bronze, Silver, Gold</td>
                     </tr>
                     <tr>
+                        <td class="field-name">total_points</td>
+                        <td class="data-type">INT</td>
+                        <td></td>
+                        <td>แต้มสะสมทั้งหมดที่เคยได้รับ</td>
+                    </tr>
+                    <tr>
                         <td class="field-name">points</td>
                         <td class="data-type">INT</td>
                         <td></td>
@@ -466,7 +474,7 @@
                         <td class="field-name">role</td>
                         <td class="data-type">ENUM</td>
                         <td></td>
-                        <td>บทบาท: super_admin, admin</td>
+                        <td>บทบาท: admin, owner, staff</td>
                     </tr>
                     <tr>
                         <td class="field-name">status</td>
@@ -966,6 +974,12 @@
                         <td>จากการจอง → bookings (NULL ได้)</td>
                     </tr>
                     <tr>
+                        <td class="field-name">redemption_id</td>
+                        <td class="data-type">INT</td>
+                        <td><span class="key-badge fk">FK</span></td>
+                        <td>รหัสการแลกของรางวัล → reward_redemptions (NULL ได้)</td>
+                    </tr>
+                    <tr>
                         <td class="field-name">points</td>
                         <td class="data-type">INT</td>
                         <td></td>
@@ -1061,7 +1075,7 @@
                         <td>หมวดหมู่: food, product, voucher, discount</td>
                     </tr>
                     <tr>
-                        <td class="field-name">status</td>
+                        <td class="field-name">STATUS</td>
                         <td class="data-type">ENUM</td>
                         <td></td>
                         <td>สถานะ: active, inactive, out_of_stock</td>
@@ -1112,6 +1126,12 @@
                         <td class="data-type">INT</td>
                         <td><span class="key-badge fk">FK</span></td>
                         <td>ผู้ใช้ → users</td>
+                    </tr>
+                    <tr>
+                        <td class="field-name">redeemed_by</td>
+                        <td class="data-type">INT</td>
+                        <td><span class="key-badge fk">FK</span></td>
+                        <td>พนักงานที่แลกให้ลูกค้า → admins</td>
                     </tr>
                     <tr>
                         <td class="field-name">reward_id</td>
@@ -1174,10 +1194,10 @@
                         <td>หมายเหตุจาก Admin</td>
                     </tr>
                     <tr>
-                        <td class="field-name">redeemed_by</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge fk">FK</span></td>
-                        <td>พนักงานที่แลกให้ลูกค้า → admins (เปลี่ยนจากระบบอนุมัติเป็นพนักงานแลกให้โดยตรง)</td>
+                        <td class="field-name">completed_at</td>
+                        <td class="data-type">DATETIME</td>
+                        <td></td>
+                        <td>วันที่เสร็จสิ้น</td>
                     </tr>
                     <tr>
                         <td class="field-name">created_at</td>
@@ -1491,290 +1511,6 @@
             </table>
         </div>
 
-        <!-- 12. Promotions Table -->
-        <div class="table-card">
-            <div class="table-header color-violet">
-                <span>🎁</span>
-                <div>
-                    <h3>promotions</h3>
-                    <p class="table-desc">โปรโมชั่น/ส่วนลด</p>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ฟิลด์</th>
-                        <th>ชนิดข้อมูล</th>
-                        <th>คีย์</th>
-                        <th>คำอธิบาย</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="field-name">promotion_id</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge pk">PK</span></td>
-                        <td>รหัสโปรโมชั่น</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">code</td>
-                        <td class="data-type">VARCHAR(50)</td>
-                        <td><span class="key-badge unique">UNIQUE</span></td>
-                        <td>รหัสโปรโมชั่น (เช่น SAVE100)</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">title</td>
-                        <td class="data-type">VARCHAR(255)</td>
-                        <td></td>
-                        <td>ชื่อโปรโมชั่น</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">description</td>
-                        <td class="data-type">TEXT</td>
-                        <td></td>
-                        <td>รายละเอียด</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">discount_type</td>
-                        <td class="data-type">ENUM</td>
-                        <td></td>
-                        <td>ประเภท: percent, fixed</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">discount_value</td>
-                        <td class="data-type">DECIMAL(10,2)</td>
-                        <td></td>
-                        <td>มูลค่าส่วนลด (% หรือ บาท)</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">min_purchase</td>
-                        <td class="data-type">DECIMAL(10,2)</td>
-                        <td></td>
-                        <td>ยอดขั้นต่ำ (บาท)</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">max_discount</td>
-                        <td class="data-type">DECIMAL(10,2)</td>
-                        <td></td>
-                        <td>ส่วนลดสูงสุด (บาท)</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">start_date</td>
-                        <td class="data-type">DATETIME</td>
-                        <td></td>
-                        <td>วันเริ่มใช้งาน</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">end_date</td>
-                        <td class="data-type">DATETIME</td>
-                        <td></td>
-                        <td>วันหมดอายุ</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">usage_limit</td>
-                        <td class="data-type">INT</td>
-                        <td></td>
-                        <td>จำนวนครั้งที่ใช้ได้ทั้งหมด</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">used_count</td>
-                        <td class="data-type">INT</td>
-                        <td></td>
-                        <td>ใช้ไปแล้วกี่ครั้ง</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">status</td>
-                        <td class="data-type">ENUM</td>
-                        <td></td>
-                        <td>active, expired, disabled</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">created_by</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge fk">FK</span></td>
-                        <td>ผู้สร้าง → admins</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">created_at</td>
-                        <td class="data-type">DATETIME</td>
-                        <td></td>
-                        <td>วันที่สร้าง</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- 13. User Promotions Table -->
-        <div class="table-card">
-            <div class="table-header color-violet">
-                <span>🎟️</span>
-                <div>
-                    <h3>user_promotions</h3>
-                    <p class="table-desc">ประวัติการใช้โปรโมชั่นของผู้ใช้</p>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ฟิลด์</th>
-                        <th>ชนิดข้อมูล</th>
-                        <th>คีย์</th>
-                        <th>คำอธิบาย</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="field-name">id</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge pk">PK</span></td>
-                        <td>รหัสรายการ</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">user_id</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge fk">FK</span></td>
-                        <td>ผู้ใช้ → users</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">promotion_id</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge fk">FK</span></td>
-                        <td>โปรโมชั่น → promotions</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">booking_id</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge fk">FK</span></td>
-                        <td>การจองที่ใช้ → bookings</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">discount_amount</td>
-                        <td class="data-type">DECIMAL(10,2)</td>
-                        <td></td>
-                        <td>ส่วนลดที่ได้รับ (บาท)</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">used_at</td>
-                        <td class="data-type">DATETIME</td>
-                        <td></td>
-                        <td>วันที่ใช้</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- 14. Reviews Table -->
-        <div class="table-card">
-            <div class="table-header color-amber">
-                <span>⭐</span>
-                <div>
-                    <h3>reviews</h3>
-                    <p class="table-desc">รีวิว/ความคิดเห็นจากลูกค้า</p>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ฟิลด์</th>
-                        <th>ชนิดข้อมูล</th>
-                        <th>คีย์</th>
-                        <th>คำอธิบาย</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="field-name">review_id</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge pk">PK</span></td>
-                        <td>รหัสรีวิว</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">booking_id</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge fk">FK</span></td>
-                        <td>การจอง → bookings</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">user_id</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge fk">FK</span></td>
-                        <td>ผู้รีวิว → users</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">rating</td>
-                        <td class="data-type">TINYINT</td>
-                        <td></td>
-                        <td>คะแนน 1-5 ดาว</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">service_rating</td>
-                        <td class="data-type">TINYINT</td>
-                        <td></td>
-                        <td>คะแนนบริการ 1-5</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">speed_rating</td>
-                        <td class="data-type">TINYINT</td>
-                        <td></td>
-                        <td>คะแนนความรวดเร็ว 1-5</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">price_rating</td>
-                        <td class="data-type">TINYINT</td>
-                        <td></td>
-                        <td>คะแนนความคุ้มค่า 1-5</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">comment</td>
-                        <td class="data-type">TEXT</td>
-                        <td></td>
-                        <td>ความคิดเห็น</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">images</td>
-                        <td class="data-type">TEXT</td>
-                        <td></td>
-                        <td>รูปภาพรีวิว (JSON array)</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">response</td>
-                        <td class="data-type">TEXT</td>
-                        <td></td>
-                        <td>คำตอบจากผู้ดูแล</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">responded_by</td>
-                        <td class="data-type">INT</td>
-                        <td><span class="key-badge fk">FK</span></td>
-                        <td>ผู้ตอบ → admins</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">responded_at</td>
-                        <td class="data-type">DATETIME</td>
-                        <td></td>
-                        <td>วันที่ตอบกลับ</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">status</td>
-                        <td class="data-type">ENUM</td>
-                        <td></td>
-                        <td>pending, approved, rejected</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">is_featured</td>
-                        <td class="data-type">BOOLEAN</td>
-                        <td></td>
-                        <td>แสดงหน้าแรกหรือไม่</td>
-                    </tr>
-                    <tr>
-                        <td class="field-name">created_at</td>
-                        <td class="data-type">DATETIME</td>
-                        <td></td>
-                        <td>วันที่รีวิว</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
 
         <!-- Relationships Section -->
         <div class="section">
@@ -1817,24 +1553,24 @@
                     <span style="color: #666;">(1:N - Admin เขียนหลายบทความ)</span>
                 </div>
                 <div class="rel-item">
-                    <strong>admins</strong> <span class="rel-arrow">→</span> <strong>bookings</strong> 
+                    <strong>admins</strong> <span class="rel-arrow">→</span> <strong>bookings</strong>
                     <span style="color: #666;">(1:N - Admin รับผิดชอบหลายการจอง)</span>
                 </div>
                 <div class="rel-item">
-                    <strong>users</strong> <span class="rel-arrow">→</span> <strong>user_promotions</strong> 
-                    <span style="color: #666;">(1:N - ผู้ใช้ใช้โปรโมชั่นหลายครั้ง)</span>
+                    <strong>articles</strong> <span class="rel-arrow">→</span> <strong>article_comments</strong>
+                    <span style="color: #666;">(1:N - บทความมีหลายความคิดเห็น)</span>
                 </div>
                 <div class="rel-item">
-                    <strong>promotions</strong> <span class="rel-arrow">→</span> <strong>user_promotions</strong> 
-                    <span style="color: #666;">(1:N - โปรโมชั่นถูกใช้หลายครั้ง)</span>
+                    <strong>users</strong> <span class="rel-arrow">→</span> <strong>point_transactions</strong>
+                    <span style="color: #666;">(1:N - ผู้ใช้มีรายการแต้มหลายรายการ)</span>
                 </div>
                 <div class="rel-item">
-                    <strong>bookings</strong> <span class="rel-arrow">→</span> <strong>reviews</strong> 
-                    <span style="color: #666;">(1:1 - การจองมี 1 รีวิว)</span>
+                    <strong>rewards</strong> <span class="rel-arrow">→</span> <strong>reward_redemptions</strong>
+                    <span style="color: #666;">(1:N - ของรางวัลถูกแลกหลายครั้ง)</span>
                 </div>
                 <div class="rel-item">
-                    <strong>users</strong> <span class="rel-arrow">→</span> <strong>reviews</strong> 
-                    <span style="color: #666;">(1:N - ผู้ใช้รีวิวได้หลายครั้ง)</span>
+                    <strong>users</strong> <span class="rel-arrow">→</span> <strong>reward_redemptions</strong>
+                    <span style="color: #666;">(1:N - ผู้ใช้แลกของรางวัลได้หลายครั้ง)</span>
                 </div>
             </div>
         </div>
@@ -1848,16 +1584,20 @@
                 <li><strong>UNIQUE</strong> - ค่าต้องไม่ซ้ำกันในฟิลด์นั้น (เช่น email, username)</li>
                 <li><strong>ENUM</strong> - ชุดค่าที่กำหนดไว้ล่วงหน้า (เช่น active, inactive)</li>
                 <li><strong>DECIMAL(10,2)</strong> - ทศนิยม 10 หลัก มีจุดทศนิยม 2 ตำแหน่ง</li>
+                <li><strong>GENERATED ALWAYS</strong> - ฟิลด์ที่คำนวณอัตโนมัติ (เช่น subtotal = quantity × price_per_kg)</li>
+                <li>ฐานข้อมูลใช้ <strong>utf8mb4_unicode_ci</strong> รองรับภาษาไทยและ Emoji</li>
                 <li>ควรเพิ่ม <strong>INDEX</strong> ที่ฟิลด์ที่ค้นหาบ่อย (email, phone, status, date)</li>
-                <li>ควรตั้งค่า <strong>ON DELETE CASCADE</strong> หรือ <strong>SET NULL</strong> ตามความเหมาะสม</li>
                 <li>รหัสผ่านต้อง<strong>เข้ารหัส</strong>ด้วย password_hash() หรือ bcrypt</li>
                 <li>ตาราง <strong>carbon_footprint</strong> เป็นจุดเด่น Green Digital ของระบบ</li>
+                <li>ตาราง <strong>point_transactions</strong> เป็นระบบใหม่ที่ดีกว่า user_points</li>
             </ul>
         </div>
 
         <footer style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb; color: #666;">
-            <p>Database Design - แพลตฟอร์มรับซื้อขยะรีไซเคิลถึงที่</p>
+            <p><strong>Database Design - แพลตฟอร์มรับซื้อขยะรีไซเคิลถึงที่ (Green Digital)</strong></p>
             <p style="font-size: 0.9em; margin-top: 10px;">สำหรับการแข่งขันทักษะการพัฒนานวัตกรรมเทคโนโลยีธุรกิจดิจิทัล</p>
+            <p style="font-size: 0.85em; margin-top: 5px; color: #999;">Generated from: database.sql (Dec 22, 2025 at 02:14 PM)</p>
+            <p style="font-size: 0.85em; margin-top: 5px; color: #999;">Total Tables: 15 | Engine: InnoDB | Charset: utf8mb4_unicode_ci</p>
         </footer>
     </div>
 </body>

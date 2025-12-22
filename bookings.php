@@ -22,6 +22,28 @@ $bookings_sql = "SELECT b.*,
                  ORDER BY b.booking_date DESC, b.booking_time DESC";
 $bookings = mysqli_query($conn, $bookings_sql);
 
+// เก็บข้อมูลใน array
+$bookings_data = [];
+while ($row = mysqli_fetch_assoc($bookings)) {
+    $bookings_data[] = $row;
+}
+
+// Config สถานะ
+$status_config = [
+    'pending' => ['class' => 'bg-warning text-dark', 'text' => 'รอดำเนินการ'],
+    'confirmed' => ['class' => 'bg-info', 'text' => 'ยืนยันแล้ว'],
+    'completed' => ['class' => 'bg-success', 'text' => 'เสร็จสิ้น'],
+    'cancelled' => ['class' => 'bg-danger', 'text' => 'ยกเลิก']
+];
+
+// Config หมวดหมู่
+$category_names = [
+    'plastic' => 'พลาสติก',
+    'paper' => 'กระดาษ',
+    'metal' => 'โลหะ',
+    'glass' => 'แก้ว'
+];
+
 // ดึงประเภทขยะที่ใช้งาน
 $recycle_types_sql = "SELECT rt.*, p.price_per_kg
                       FROM recycle_types rt
@@ -75,11 +97,11 @@ while ($type = mysqli_fetch_assoc($recycle_types)) {
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h2 class="mb-2 fw-bold">📅 การจองรับขยะ</h2>
+                        <h2 class="mb-2 fw-bold">การจองรับขยะ</h2>
                         <p class="mb-0 opacity-75">จัดการและติดตามการจองรับขยะรีไซเคิลของคุณ</p>
                     </div>
                     <button type="button" class="btn btn-light btn-lg shadow" data-bs-toggle="modal" data-bs-target="#newBookingModal">
-                        ➕ จองใหม่
+                        จองใหม่
                     </button>
                 </div>
             </div>
@@ -105,151 +127,134 @@ while ($type = mysqli_fetch_assoc($recycle_types)) {
                         <input type="date" name="date_to" class="form-control" placeholder="ถึงวันที่" value="<?php echo isset($_GET['date_to']) ? $_GET['date_to'] : ''; ?>">
                     </div>
                     <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary w-100">🔍 ค้นหา</button>
+                        <button type="submit" class="btn btn-primary w-100">ค้นหา</button>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- Bookings List -->
-        <div class="row">
-            <?php
-            if ($bookings && mysqli_num_rows($bookings) > 0):
-                while ($booking = mysqli_fetch_assoc($bookings)):
-                    // Apply filters
-                    if (isset($_GET['status']) && $_GET['status'] != '' && $booking['status'] != $_GET['status']) continue;
-                    if (isset($_GET['date_from']) && $_GET['date_from'] != '' && $booking['booking_date'] < $_GET['date_from']) continue;
-                    if (isset($_GET['date_to']) && $_GET['date_to'] != '' && $booking['booking_date'] > $_GET['date_to']) continue;
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th width="80">#</th>
+                                <th>วันที่/เวลา</th>
+                                <th>ที่อยู่รับขยะ</th>
+                                <th width="120">น้ำหนักรวม</th>
+                                <th width="120">ราคาประมาณ</th>
+                                <th width="120">สถานะ</th>
+                                <th width="180" class="text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            // Apply filters
+                            $filtered_bookings = [];
+                            foreach($bookings_data as $booking) {
+                                if (isset($_GET['status']) && $_GET['status'] != '' && $booking['status'] != $_GET['status']) continue;
+                                if (isset($_GET['date_from']) && $_GET['date_from'] != '' && $booking['booking_date'] < $_GET['date_from']) continue;
+                                if (isset($_GET['date_to']) && $_GET['date_to'] != '' && $booking['booking_date'] > $_GET['date_to']) continue;
+                                $filtered_bookings[] = $booking;
+                            }
 
-                    // Get booking items
-                    $items_sql = "SELECT bi.*, rt.type_name, rt.category
-                                  FROM booking_items bi
-                                  JOIN recycle_types rt ON bi.type_id = rt.type_id
-                                  WHERE bi.booking_id = '{$booking['booking_id']}'";
-                    $items = mysqli_query($conn, $items_sql);
-            ?>
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h5 class="fw-bold mb-1">การจอง #<?php echo str_pad($booking['booking_id'], 6, '0', STR_PAD_LEFT); ?></h5>
-                                <small class="text-muted">
-                                    📅 <?php echo date('d/m/Y', strtotime($booking['booking_date'])); ?>
-                                    ⏰ <?php echo date('H:i', strtotime($booking['booking_time'])); ?> น.
-                                </small>
-                            </div>
-                            <div>
-                                <?php if ($booking['status'] == 'pending'): ?>
-                                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">รอดำเนินการ</span>
-                                <?php elseif ($booking['status'] == 'confirmed'): ?>
-                                    <span class="badge bg-info fs-6 px-3 py-2">ยืนยันแล้ว</span>
-                                <?php elseif ($booking['status'] == 'completed'): ?>
-                                    <span class="badge bg-success fs-6 px-3 py-2">เสร็จสิ้น</span>
-                                <?php else: ?>
-                                    <span class="badge bg-danger fs-6 px-3 py-2">ยกเลิก</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <strong>📍 ที่อยู่:</strong><br>
-                            <small><?php echo nl2br(htmlspecialchars($booking['pickup_address'])); ?></small>
-                        </div>
-
-                        <?php if ($items && mysqli_num_rows($items) > 0): ?>
-                            <div class="mb-3">
-                                <strong>♻️ รายการขยะ:</strong>
-                                <?php while ($item = mysqli_fetch_assoc($items)): ?>
-                                    <div class="card bg-light border-0 p-2 mb-2 mt-2">
-                                        <div class="d-flex justify-content-between">
-                                            <span><?php echo htmlspecialchars($item['type_name']); ?></span>
-                                            <span class="text-success fw-bold"><?php echo number_format($item['quantity'], 2); ?> kg</span>
+                            if (count($filtered_bookings) > 0):
+                                $no = 1;
+                                foreach($filtered_bookings as $booking):
+                            ?>
+                                <tr>
+                                    <td><?= $no++ ?></td>
+                                    <td>
+                                        <strong><?= date('d/m/Y', strtotime($booking['booking_date'])) ?></strong><br>
+                                        <small class="text-muted"><?= date('H:i', strtotime($booking['booking_time'])) ?> น.</small>
+                                    </td>
+                                    <td>
+                                        <small><?= nl2br(htmlspecialchars($booking['pickup_address'])) ?></small>
+                                    </td>
+                                    <td>
+                                        <?php if ($booking['total_weight']): ?>
+                                            <span class="text-success fw-bold"><?= number_format($booking['total_weight'], 2) ?> kg</span>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($booking['estimated_price']): ?>
+                                            <span class="text-success fw-bold"><?= number_format($booking['estimated_price'], 2) ?> ฿</span>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $status = $booking['status'];
+                                        $config = $status_config[$status] ?? $status_config['cancelled'];
+                                        ?>
+                                        <span class="badge <?= $config['class'] ?>"><?= $config['text'] ?></span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="booking_detail.php?id=<?= $booking['booking_id'] ?>" class="btn btn-info btn-sm">ดู</a>
+                                        <?php if ($booking['status'] == 'pending' || $booking['status'] == 'confirmed'): ?>
+                                            <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal<?= $booking['booking_id'] ?>">ยกเลิก</button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        <div class="py-4">
+                                            <h5>ยังไม่มีการจอง</h5>
+                                            <p class="mb-3">เริ่มต้นรีไซเคิลกับเราวันนี้!</p>
+                                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newBookingModal">
+                                                สร้างการจองแรกของคุณ
+                                            </button>
                                         </div>
-                                    </div>
-                                <?php endwhile; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ($booking['total_weight']): ?>
-                            <div class="mb-2">
-                                <strong>⚖️ น้ำหนักรวม:</strong> <?php echo number_format($booking['total_weight'], 2); ?> kg
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ($booking['estimated_price']): ?>
-                            <div class="mb-3">
-                                <strong>💰 ราคาประมาณ:</strong>
-                                <span class="text-success fs-5 fw-bold"><?php echo number_format($booking['estimated_price'], 2); ?> ฿</span>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ($booking['notes']): ?>
-                            <div class="mb-3">
-                                <strong>📝 หมายเหตุ:</strong>
-                                <small class="text-muted d-block mt-1"><?php echo nl2br(htmlspecialchars($booking['notes'])); ?></small>
-                            </div>
-                        <?php endif; ?>
-
-                        <div class="d-flex gap-2 mt-3">
-                            <a href="booking_detail.php?id=<?php echo $booking['booking_id']; ?>" class="btn btn-primary shadow-sm">
-                                👁️ รายละเอียด
-                            </a>
-                            <?php if ($booking['status'] == 'pending' || $booking['status'] == 'confirmed'): ?>
-                                <button type="button" class="btn btn-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#cancelModal<?php echo $booking['booking_id']; ?>">
-                                    ❌ ยกเลิก
-                                </button>
+                                    </td>
+                                </tr>
                             <?php endif; ?>
-                        </div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
-
-                <!-- Cancel Confirmation Modal for each booking -->
-                <?php if ($booking['status'] == 'pending' || $booking['status'] == 'confirmed'): ?>
-                <div class="modal fade" id="cancelModal<?php echo $booking['booking_id']; ?>" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content border-danger">
-                            <div class="modal-header bg-danger text-white">
-                                <h5 class="modal-title">⚠️ ยืนยันการยกเลิก</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="alert alert-warning">
-                                    <strong>คุณกำลังจะยกเลิกการจอง #<?php echo str_pad($booking['booking_id'], 6, '0', STR_PAD_LEFT); ?></strong>
-                                </div>
-                                <p><strong>วันที่:</strong> <?php echo date('d/m/Y', strtotime($booking['booking_date'])); ?></p>
-                                <p><strong>เวลา:</strong> <?php echo date('H:i', strtotime($booking['booking_time'])); ?> น.</p>
-                                <div class="alert alert-info">
-                                    <small>การยกเลิกนี้ไม่สามารถย้อนกลับได้</small>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <form method="POST" action="sql/booking_cancel.php" class="w-100">
-                                    <input type="hidden" name="booking_id" value="<?php echo $booking['booking_id']; ?>">
-                                    <div class="d-flex gap-2 justify-content-end">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                                        <button type="submit" class="btn btn-danger">ยืนยันยกเลิก</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
             </div>
-            <?php endwhile; ?>
-            <?php else: ?>
-                <div class="col-12">
-                    <div class="alert alert-info text-center">
-                        <h5>ยังไม่มีการจอง</h5>
-                        <p class="mb-3">เริ่มต้นรีไซเคิลกับเราวันนี้!</p>
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newBookingModal">
-                            ➕ สร้างการจองแรกของคุณ
-                        </button>
+        </div>
+
+        <!-- Cancel Modals -->
+        <?php foreach($filtered_bookings as $booking): ?>
+            <?php if ($booking['status'] == 'pending' || $booking['status'] == 'confirmed'): ?>
+            <div class="modal fade" id="cancelModal<?php echo $booking['booking_id']; ?>" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content border-danger">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">ยืนยันการยกเลิก</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <strong>คุณกำลังจะยกเลิกการจอง #<?php echo str_pad($booking['booking_id'], 6, '0', STR_PAD_LEFT); ?></strong>
+                            </div>
+                            <p><strong>วันที่:</strong> <?php echo date('d/m/Y', strtotime($booking['booking_date'])); ?></p>
+                            <p><strong>เวลา:</strong> <?php echo date('H:i', strtotime($booking['booking_time'])); ?> น.</p>
+                            <div class="alert alert-info">
+                                <small>การยกเลิกนี้ไม่สามารถย้อนกลับได้</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <form method="POST" action="sql/booking_cancel.php" class="w-100">
+                                <input type="hidden" name="booking_id" value="<?php echo $booking['booking_id']; ?>">
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                                    <button type="submit" class="btn btn-danger">ยืนยันยกเลิก</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
+            </div>
             <?php endif; ?>
-        </div>
+        <?php endforeach; ?>
     </div>
 
     <!-- Modal: New Booking -->
@@ -257,7 +262,7 @@ while ($type = mysqli_fetch_assoc($recycle_types)) {
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">➕ จองรับขยะใหม่</h5>
+                    <h5 class="modal-title">จองรับขยะใหม่</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" action="sql/booking_create.php">
@@ -265,13 +270,13 @@ while ($type = mysqli_fetch_assoc($recycle_types)) {
                         <!-- Date & Time -->
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label class="form-label">📅 วันที่รับ <span class="text-danger">*</span></label>
+                                <label class="form-label">วันที่รับ <span class="text-danger">*</span></label>
                                 <input type="date" name="booking_date" class="form-control" required
                                        min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>">
                                 <small class="text-muted">จองล่วงหน้าอย่างน้อย 1 วัน</small>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">⏰ เวลารับ <span class="text-danger">*</span></label>
+                                <label class="form-label">เวลารับ <span class="text-danger">*</span></label>
                                 <select name="booking_time" class="form-select" required>
                                     <option value="">เลือกเวลา</option>
                                     <option value="09:00:00">09:00 - 10:00 น.</option>
@@ -287,7 +292,7 @@ while ($type = mysqli_fetch_assoc($recycle_types)) {
 
                         <!-- Address -->
                         <div class="mb-3">
-                            <label class="form-label">📍 ที่อยู่รับขยะ <span class="text-danger">*</span></label>
+                            <label class="form-label">ที่อยู่รับขยะ <span class="text-danger">*</span></label>
                             <textarea name="pickup_address" class="form-control" rows="3" required
                                       placeholder="กรอกที่อยู่สำหรับรับขยะ..."><?php echo htmlspecialchars($user['address']); ?></textarea>
                             <small class="text-muted">ใช้ที่อยู่จากโปรไฟล์ หรือกรอกที่อยู่อื่น</small>
@@ -295,21 +300,13 @@ while ($type = mysqli_fetch_assoc($recycle_types)) {
 
                         <!-- Recycle Types Selection -->
                         <div class="mb-3">
-                            <label class="form-label">♻️ เลือกประเภทขยะและระบุน้ำหนัก <span class="text-danger">*</span></label>
+                            <label class="form-label">เลือกประเภทขยะและระบุน้ำหนัก <span class="text-danger">*</span></label>
                             <p class="text-muted small">กรุณาเลือกอย่างน้อย 1 รายการ และระบุน้ำหนักโดยประมาณ</p>
 
                             <?php foreach ($types_by_category as $category => $types): ?>
                                 <div class="mb-3">
                                     <h6 class="text-uppercase text-muted mb-2">
-                                        <?php
-                                        $category_names = [
-                                            'plastic' => '🥤 พลาสติก',
-                                            'paper' => '📄 กระดาษ',
-                                            'metal' => '🥫 โลหะ',
-                                            'glass' => '🍾 แก้ว'
-                                        ];
-                                        echo $category_names[$category] ?? $category;
-                                        ?>
+                                        <?= $category_names[$category] ?? $category ?>
                                     </h6>
                                     <?php foreach ($types as $type): ?>
                                         <div class="recycle-type-card card border-2 p-3 mb-2">
@@ -334,7 +331,7 @@ while ($type = mysqli_fetch_assoc($recycle_types)) {
                                                     </div>
                                                 </label>
                                             </div>
-                                            <!-- Weight Input (แสดงเมื่อติ๊กเลือก) -->
+                                            <!-- Weight Input -->
                                             <div class="weight-input-wrapper">
                                                 <label class="form-label small">น้ำหนักโดยประมาณ (kg)</label>
                                                 <input type="number"
@@ -353,13 +350,13 @@ while ($type = mysqli_fetch_assoc($recycle_types)) {
 
                         <!-- Notes -->
                         <div class="mb-3">
-                            <label class="form-label">📝 หมายเหตุเพิ่มเติม</label>
+                            <label class="form-label">หมายเหตุเพิ่มเติม</label>
                             <textarea name="notes" class="form-control" rows="2"
                                       placeholder="ระบุรายละเอียดเพิ่มเติม เช่น จุดรับที่ง่ายต่อการเข้าถึง..."></textarea>
                         </div>
 
                         <div class="alert alert-info">
-                            <strong>📌 หมายเหตุ:</strong>
+                            <strong>หมายเหตุ:</strong>
                             <ul class="mb-0 mt-2">
                                 <li>ราคาและน้ำหนักที่แสดงเป็นเพียงประมาณการเบื้องต้น</li>
                                 <li>ราคาจริงจะคำนวณจากน้ำหนักที่ชั่งจริง ณ วันรับของ</li>
@@ -369,7 +366,7 @@ while ($type = mysqli_fetch_assoc($recycle_types)) {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                        <button type="submit" class="btn btn-success">✅ ยืนยันการจอง</button>
+                        <button type="submit" class="btn btn-success">ยืนยันการจอง</button>
                     </div>
                 </form>
             </div>

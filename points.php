@@ -24,23 +24,30 @@ $points_sql = "SELECT pt.*,
                ORDER BY pt.created_at DESC";
 $points_transactions = mysqli_query($conn, $points_sql);
 
+// เก็บข้อมูลใน array
+$transactions_data = [];
+while ($pt = mysqli_fetch_assoc($points_transactions)) {
+    $transactions_data[] = $pt;
+}
+
 // คำนวณสถิติ
 $total_earned = 0;
 $total_redeemed = 0;
-$total_transactions = mysqli_num_rows($points_transactions);
-
-// Reset pointer เพื่อนับสถิติ
-mysqli_data_seek($points_transactions, 0);
-while ($pt = mysqli_fetch_assoc($points_transactions)) {
+foreach($transactions_data as $pt) {
     if ($pt['transaction_type'] == 'earn' || $pt['points'] > 0) {
         $total_earned += abs($pt['points']);
     } elseif ($pt['transaction_type'] == 'redeem' || $pt['points'] < 0) {
         $total_redeemed += abs($pt['points']);
     }
 }
+$total_transactions = count($transactions_data);
 
-// Reset pointer อีกครั้งเพื่อแสดงผล
-mysqli_data_seek($points_transactions, 0);
+// Config ประเภทรายการ
+$transaction_config = [
+    'earn' => ['class' => 'bg-success', 'text' => 'ได้รับแต้ม'],
+    'redeem' => ['class' => 'bg-danger', 'text' => 'ใช้แต้ม'],
+    'adjustment' => ['class' => 'bg-warning', 'text' => 'ปรับปรุง']
+];
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -56,29 +63,29 @@ mysqli_data_seek($points_transactions, 0);
     <div class="container mt-4 mb-5">
         <!-- Alert Messages -->
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="alert alert-success alert-dismissible fade show shadow-sm">
-                ✅ <?= $_SESSION['success'] ?>
+            <div class="alert alert-success alert-dismissible fade show">
+                <strong>สำเร็จ!</strong> <?= $_SESSION['success'] ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             <?php unset($_SESSION['success']); ?>
         <?php endif; ?>
 
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show shadow-sm">
-                ❌ <?= $_SESSION['error'] ?>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <strong>ผิดพลาด!</strong> <?= $_SESSION['error'] ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             <?php unset($_SESSION['error']); ?>
         <?php endif; ?>
 
         <!-- Points Hero Section -->
-        <div class="card border-0 shadow-lg mb-4 bg-success bg-gradient text-white">
+        <div class="card border-0 shadow mb-4 bg-success bg-gradient text-white">
             <div class="card-body text-center p-5">
-                <h3 class="mb-3 opacity-75">⭐ แต้มสะสมของคุณ</h3>
+                <h3 class="mb-3 opacity-75">แต้มสะสมของคุณ</h3>
                 <h1 class="display-1 fw-bold mb-3"><?= number_format($current_points) ?></h1>
                 <h4 class="mb-3">แต้ม</h4>
                 <div class="badge bg-light text-dark fs-6 px-4 py-2">
-                    💰 100 บาท = 1 แต้ม
+                    100 บาท = 1 แต้ม
                 </div>
             </div>
         </div>
@@ -114,7 +121,7 @@ mysqli_data_seek($points_transactions, 0);
         <!-- Information Box -->
         <div class="card border-0 shadow-sm border-start border-success border-5 mb-4 bg-light">
             <div class="card-body p-4">
-                <h5 class="mb-3 text-success">📋 วิธีการได้รับแต้ม</h5>
+                <h5 class="mb-3 text-success">วิธีการได้รับแต้ม</h5>
                 <ul class="mb-0 fs-6">
                     <li class="mb-2">รับแต้มทุกครั้งที่ขายขยะรีไซเคิล (100 บาท = 1 แต้ม)</li>
                     <li class="mb-2">แต้มจะได้รับเมื่อการจองเสร็จสิ้นและชำระเงินเรียบร้อยแล้ว</li>
@@ -126,34 +133,29 @@ mysqli_data_seek($points_transactions, 0);
         <!-- Transactions History -->
         <div class="row">
             <div class="col-12">
-                <h4 class="mb-3">📜 ประวัติการทำรายการแต้ม</h4>
+                <h4 class="mb-3">ประวัติการทำรายการแต้ม</h4>
 
                 <?php if ($total_transactions > 0): ?>
-                    <?php while ($pt = mysqli_fetch_assoc($points_transactions)): ?>
+                    <?php foreach($transactions_data as $pt): ?>
                         <div class="card border-0 shadow-sm mb-3">
                             <div class="card-body p-4">
                                 <div class="row align-items-center">
                                     <div class="col-md-8">
                                         <div class="d-flex align-items-center mb-3">
                                             <?php
-                                            $badge_class = 'bg-success';
-                                            $type_text = 'ได้รับแต้ม';
-                                            $icon = '✅';
-
-                                            if ($pt['transaction_type'] == 'redeem' || $pt['points'] < 0) {
-                                                $badge_class = 'bg-danger';
-                                                $type_text = 'ใช้แต้ม';
-                                                $icon = '🎁';
-                                            } elseif ($pt['transaction_type'] == 'adjustment') {
-                                                $badge_class = 'bg-warning';
-                                                $type_text = 'ปรับปรุง';
-                                                $icon = '⚙️';
+                                            // กำหนดประเภทรายการ
+                                            $trans_type = $pt['transaction_type'];
+                                            if ($pt['points'] < 0) {
+                                                $trans_type = 'redeem';
+                                            } elseif ($pt['points'] > 0 && $trans_type != 'adjustment') {
+                                                $trans_type = 'earn';
                                             }
+
+                                            $config = $transaction_config[$trans_type] ?? $transaction_config['earn'];
                                             ?>
-                                            <span class="fs-2 me-3"><?= $icon ?></span>
                                             <div>
-                                                <span class="badge <?= $badge_class ?> fs-6 px-3 py-2">
-                                                    <?= $type_text ?>
+                                                <span class="badge <?= $config['class'] ?> fs-6 px-3 py-2">
+                                                    <?= $config['text'] ?>
                                                 </span>
                                             </div>
                                         </div>
@@ -162,14 +164,14 @@ mysqli_data_seek($points_transactions, 0);
 
                                         <div class="text-muted">
                                             <?php if ($pt['booking_id']): ?>
-                                                <div class="mb-1">📦 การจองหมายเลข: #<?= str_pad($pt['booking_id'], 6, '0', STR_PAD_LEFT) ?></div>
+                                                <div class="mb-1"><strong>การจองหมายเลข:</strong> #<?= str_pad($pt['booking_id'], 6, '0', STR_PAD_LEFT) ?></div>
                                             <?php endif; ?>
 
                                             <?php if ($pt['amount'] > 0): ?>
-                                                <div class="mb-1">💵 ยอดเงิน: <?= number_format($pt['amount'], 2) ?> บาท</div>
+                                                <div class="mb-1"><strong>ยอดเงิน:</strong> <?= number_format($pt['amount'], 2) ?> บาท</div>
                                             <?php endif; ?>
 
-                                            <div>🕐 วันที่: <?= date('d/m/Y H:i น.', strtotime($pt['created_at'])) ?></div>
+                                            <div><strong>วันที่:</strong> <?= date('d/m/Y H:i น.', strtotime($pt['created_at'])) ?></div>
                                         </div>
                                     </div>
 
@@ -189,17 +191,16 @@ mysqli_data_seek($points_transactions, 0);
                                 </div>
                             </div>
                         </div>
-                    <?php endwhile; ?>
+                    <?php endforeach; ?>
 
                 <?php else: ?>
                     <!-- Empty State -->
                     <div class="card border-0 shadow-sm text-center p-5">
                         <div class="card-body">
-                            <div class="display-1 mb-4">⭐</div>
                             <h4 class="mb-3">ยังไม่มีรายการแต้มสะสม</h4>
                             <p class="text-muted mb-4">เริ่มต้นรับแต้มได้ด้วยการขายขยะรีไซเคิลกับเรา</p>
-                            <a href="booking_create.php" class="btn btn-primary btn-lg shadow">
-                                📅 สร้างการจองใหม่
+                            <a href="bookings.php" class="btn btn-primary shadow">
+                                สร้างการจองใหม่
                             </a>
                         </div>
                     </div>
