@@ -6,7 +6,7 @@
 .DS_Store
 
 # Config files with sensitive data
-config.php
+config.local.php
 
 # Uploaded files
 uploads/

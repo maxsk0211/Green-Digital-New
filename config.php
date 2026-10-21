@@ -1,9 +1,21 @@
 <?php
-// ตั้งค่าการเชื่อมต่อฐานข้อมูล (ถ้ามี environment variable จาก Docker จะใช้ค่านั้นแทน)
-$host = getenv("DB_HOST") ?: "localhost";
-$username = getenv("DB_USER") ?: "chanchal_green_digital";
-$password = getenv("DB_PASSWORD") ?: "DSwgU7hpfk4QJEGw6Ksj";
-$database = getenv("DB_NAME") ?: "chanchal_green_digital";
+// ตั้งค่าการเชื่อมต่อฐานข้อมูล
+$host = "localhost";
+$username = "chanchal_green_digital";
+$password = "";
+$database = "chanchal_green_digital";
+
+// รหัสผ่านของเซิร์ฟเวอร์จริงเก็บไว้ใน config.local.php ซึ่งไม่อยู่ใน git
+// (ดูตัวอย่างใน config.local.example.php)
+if (file_exists(__DIR__ . "/config.local.php")) {
+    require __DIR__ . "/config.local.php";
+}
+
+// ถ้ามี environment variable จาก Docker จะใช้ค่านั้นแทน
+$host = getenv("DB_HOST") ?: $host;
+$username = getenv("DB_USER") ?: $username;
+$password = getenv("DB_PASSWORD") ?: $password;
+$database = getenv("DB_NAME") ?: $database;
 
 // เชื่อมต่อฐานข้อมูล
 $conn = new mysqli($host, $username, $password, $database);
