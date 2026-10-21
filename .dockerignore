@@ -1,0 +1,9 @@
+.git
+.claude
+.vscode
+.DS_Store
+test
+docker
+docker-compose.yml
+Dockerfile
+.dockerignore

@@ -1,0 +1,50 @@
+# รันทั้งระบบบนเครื่อง: docker compose up -d --build
+#   เว็บไซต์    http://localhost:8080
+#   phpMyAdmin http://localhost:8081
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_USER: green_digital
+      DB_PASSWORD: green_digital
+      DB_NAME: chanchal_green_digital
+    volumes:
+      # แก้โค้ดในโฟลเดอร์นี้แล้วรีเฟรชหน้าเว็บได้ทันที ไม่ต้อง build ใหม่
+      - ./:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:10.6
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: chanchal_green_digital
+      MARIADB_USER: green_digital
+      MARIADB_PASSWORD: green_digital
+      TZ: Asia/Bangkok
+    volumes:
+      - db_data:/var/lib/mysql
+      # นำเข้าเฉพาะครั้งแรกที่สร้างฐานข้อมูล (ถ้าต้องการนำเข้าใหม่: docker compose down -v)
+      - ./database.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./docker/seed-admin.sql:/docker-entrypoint-initdb.d/02-seed-admin.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+    depends_on:
+      - db
+
+volumes:
+  db_data:

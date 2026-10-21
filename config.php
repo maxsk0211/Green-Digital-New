@@ -1,9 +1,9 @@
 <?php
-// ตั้งค่าการเชื่อมต่อฐานข้อมูล
-$host = "localhost";
-$username = "chanchal_green_digital";
-$password = "DSwgU7hpfk4QJEGw6Ksj";
-$database = "chanchal_green_digital";
+// ตั้งค่าการเชื่อมต่อฐานข้อมูล (ถ้ามี environment variable จาก Docker จะใช้ค่านั้นแทน)
+$host = getenv("DB_HOST") ?: "localhost";
+$username = getenv("DB_USER") ?: "chanchal_green_digital";
+$password = getenv("DB_PASSWORD") ?: "DSwgU7hpfk4QJEGw6Ksj";
+$database = getenv("DB_NAME") ?: "chanchal_green_digital";
 
 // เชื่อมต่อฐานข้อมูล
 $conn = new mysqli($host, $username, $password, $database);
